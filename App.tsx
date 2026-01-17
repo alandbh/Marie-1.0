@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { GeminiService } from './services/geminiService';
+import { StorageService } from './services/storageService';
 import { Message, AppState, ProcessingStep } from './types';
-import { User, Cpu, Upload, Terminal, Play, AlertTriangle, CheckCircle, Database, ShieldAlert, Globe, Link as LinkIcon, Key, Code, Bug, FileJson } from 'lucide-react';
+import { User, Cpu, Upload, Terminal, Play, AlertTriangle, CheckCircle, Database, ShieldAlert, Globe, Link as LinkIcon, Key, Code, Bug, FileJson, Save, Trash2, RefreshCw } from 'lucide-react';
 
 // Declare global Pyodide
 declare global {
@@ -35,9 +36,37 @@ export default function App() {
   const [processingStep, setProcessingStep] = useState<ProcessingStep>(ProcessingStep.IDLE);
   const [pyodide, setPyodide] = useState<any>(null);
   const [debugOutput, setDebugOutput] = useState<string>('');
+  const [isDataRestored, setIsDataRestored] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize Pyodide with Robust Polling
+  // 1. Restore Data on Mount
+  useEffect(() => {
+    const loadPersistedData = async () => {
+      try {
+        const data = await StorageService.loadAll();
+        
+        if (data.apiUrl) setApiUrl(data.apiUrl);
+        if (data.resultsApiKey) setResultsApiKey(data.resultsApiKey);
+
+        if (data.heuristicasContent || data.resultadosContent) {
+          setState(s => ({
+            ...s,
+            heuristicasContent: data.heuristicasContent,
+            resultadosContent: data.resultadosContent,
+            // If we have data, we can default to chat tab for convenience, 
+            // but for now let's keep it on admin so user sees the status
+             activeTab: 'chat' 
+          }));
+          setIsDataRestored(true);
+        }
+      } catch (e) {
+        console.error("Failed to restore data", e);
+      }
+    };
+    loadPersistedData();
+  }, []);
+
+  // 2. Initialize Pyodide with Robust Polling
   useEffect(() => {
     let isMounted = true;
     const checkAndLoadPyodide = async () => {
@@ -64,6 +93,24 @@ export default function App() {
     return () => { isMounted = false; };
   }, [pyodide]);
 
+  // 3. Sync Pyodide FS when data or runtime changes
+  useEffect(() => {
+    if (pyodide && state.isPythonReady) {
+      if (state.heuristicasContent) {
+        try {
+           pyodide.FS.writeFile("heuristicas.json", JSON.stringify(state.heuristicasContent));
+           console.log("Synced heuristicas.json to Pyodide FS");
+        } catch (e) { console.error("FS Sync Error", e); }
+      }
+      if (state.resultadosContent) {
+        try {
+           pyodide.FS.writeFile("resultados.json", JSON.stringify(state.resultadosContent));
+           console.log("Synced resultados.json to Pyodide FS");
+        } catch (e) { console.error("FS Sync Error", e); }
+      }
+    }
+  }, [state.heuristicasContent, state.resultadosContent, state.isPythonReady, pyodide]);
+
   // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -76,11 +123,11 @@ export default function App() {
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
           const content = JSON.parse(event.target?.result as string);
           setState(s => ({ 
@@ -88,6 +135,8 @@ export default function App() {
             heuristicasFile: file, 
             heuristicasContent: content 
           }));
+          // Persist
+          await StorageService.saveFile('heuristicas', content);
         } catch (err) {
           alert("Erro ao ler JSON de heurísticas");
         }
@@ -117,11 +166,31 @@ export default function App() {
       const data = await res.json();
       
       setState(s => ({ ...s, resultadosContent: data }));
-      alert(`Dados carregados com sucesso! (${Object.keys(data).length || 'Vários'} registros)`);
-      // console.log("Preview JS:", data);
+      
+      // Persist everything
+      StorageService.saveConfig(apiUrl, resultsApiKey);
+      await StorageService.saveFile('resultados', data);
+
+      alert(`Dados carregados e SALVOS no cache! (${Object.keys(data).length || 'Vários'} registros)`);
     } catch (e: any) {
       console.error(e);
       alert(`Erro ao buscar resultados: ${e.message}. Verifique a URL, a chave e o CORS.`);
+    }
+  };
+
+  const handleClearCache = async () => {
+    if (confirm("Isso apagará todos os dados salvos (Heurísticas, Resultados e Configurações de API). Confirmar?")) {
+      await StorageService.clearAll();
+      setState(s => ({
+        ...s,
+        heuristicasContent: null,
+        resultadosContent: null,
+        heuristicasFile: null
+      }));
+      setApiUrl('');
+      setResultsApiKey('');
+      setIsDataRestored(false);
+      alert("Cache limpo.");
     }
   };
 
@@ -135,7 +204,7 @@ export default function App() {
     setDebugOutput("Iniciando auditoria no sistema de arquivos virtual...\n");
     
     try {
-      // FORCE WRITE FILES
+      // FORCE WRITE FILES (Redundant safety check)
       pyodide.FS.writeFile("heuristicas.json", JSON.stringify(state.heuristicasContent || {}));
       pyodide.FS.writeFile("resultados.json", JSON.stringify(state.resultadosContent));
       
@@ -267,7 +336,7 @@ inspect_results()
       
       setProcessingStep(ProcessingStep.EXECUTING_PYTHON);
       
-      // 3. Prepare Filesystem
+      // 3. Prepare Filesystem (Just in case)
       pyodide.FS.writeFile("heuristicas.json", JSON.stringify(state.heuristicasContent));
       pyodide.FS.writeFile("resultados.json", JSON.stringify(state.resultadosContent));
 
@@ -374,10 +443,20 @@ inspect_results()
       <main className="flex-1 overflow-hidden relative">
         {state.activeTab === 'admin' && (
           <div className="h-full overflow-y-auto p-8 max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
-              <Database className="w-6 h-6 text-red-500" />
-              Base de Conhecimento
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <Database className="w-6 h-6 text-red-500" />
+                Base de Conhecimento
+                </h2>
+                {isDataRestored && (
+                    <button 
+                        onClick={handleClearCache}
+                        className="flex items-center gap-2 text-xs text-red-500 hover:text-red-400 px-3 py-1 rounded border border-red-900 hover:border-red-500 transition-colors"
+                    >
+                        <Trash2 className="w-3 h-3" /> Limpar Cache Local
+                    </button>
+                )}
+            </div>
             
             <div className="grid gap-6">
               {/* Python Status */}
@@ -393,6 +472,12 @@ inspect_results()
                     </span>
                   </div>
                 </div>
+                {isDataRestored && (
+                    <div className="flex items-center gap-2 bg-neutral-800 px-3 py-1.5 rounded-full border border-neutral-700">
+                        <Save className="w-4 h-4 text-green-500" />
+                        <span className="text-xs text-neutral-300">Dados Restaurados do Cache</span>
+                    </div>
+                )}
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
@@ -509,7 +594,7 @@ inspect_results()
                   <h3 className="text-xl font-bold mb-2">Aguardando Análise</h3>
                   <p className="text-sm max-w-md mx-auto">
                     Digite o número da heurística (ex: "3.1") para iniciar a análise. 
-                    Certifique-se de que os dados foram carregados na aba Admin.
+                    {isDataRestored && <span className="text-green-500 block mt-1 font-bold">● Dados carregados do cache.</span>}
                   </p>
                 </div>
               )}
