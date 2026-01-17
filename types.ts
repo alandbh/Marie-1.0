@@ -1,3 +1,4 @@
+import { Project } from "./projects";
 
 export interface Message {
   id: string;
@@ -12,10 +13,14 @@ export interface Message {
 export interface AppState {
   hasApiKey: boolean;
   isPythonReady: boolean;
-  heuristicasFile: File | null;
+  activeTab: 'home' | 'chat' | 'admin';
+  selectedProject: Project | null;
+  isLoadingData: boolean;
+  
+  // Data Content
   heuristicasContent: any | null;
   resultadosContent: any | null;
-  activeTab: 'chat' | 'admin';
+  heuristicasFile: File | null; // Kept for legacy admin upload
 }
 
 export enum ProcessingStep {

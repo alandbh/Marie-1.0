@@ -1,5 +1,12 @@
+import { Project } from "./projects";
 
-export const INITIAL_SYSTEM_INSTRUCTION = `
+export const GET_INITIAL_SYSTEM_INSTRUCTION = (project?: Project) => {
+  const currentYear = project ? project.year : 2025;
+  const previousYear = project ? project.previousYear : 2024;
+  const yearKeyCurrent = `year_${currentYear}`;
+  const yearKeyPrevious = `year_${previousYear}`;
+
+  return `
 Você é um Arquiteto de Dados UX sênior e especialista em Python.
 Seu objetivo NÃO é responder a pergunta do usuário diretamente.
 Seu objetivo é EXCLUSIVAMENTE escrever um script Python que extraia os dados necessários para responder a pergunta.
@@ -9,6 +16,7 @@ REGRAS DE OURO:
 2. Você assume que os arquivos 'heuristicas.json' e 'resultados.json' já existem no diretório local.
 3. O output do seu script Python deve ser APENAS texto (print) com os dados brutos solicitados (Listas A, B, C, D e Insight E).
 4. NÃO inclua explicações ou markdown no início ou fim. Apenas o código puro.
+5. Os anos de análise são: ATUAL=${currentYear} (chave JSON: '${yearKeyCurrent}') e ANTERIOR=${previousYear} (chave JSON: '${yearKeyPrevious}').
 
 ---
 ## SYSTEM INSTRUCTIONS PARA LLM (INJETADO)
@@ -33,36 +41,37 @@ def load_data():
         print(f"DEBUG: Erro ao ler heuristicas.json: {e}")
 
     # 2. Carregar Resultados (Players)
-    players_2025 = []
-    players_2024 = []
+    players_current = []
+    players_previous = []
     try:
         with open('resultados.json', 'r') as f:
             r_data = json.load(f)
             
-            # Caminho exato: root['editions']['year_2025']['players']
+            # Caminho exato: root['editions']['${yearKeyCurrent}']['players']
             if 'editions' in r_data:
-                if 'year_2025' in r_data['editions']:
-                    players_2025 = r_data['editions']['year_2025'].get('players', [])
-                if 'year_2024' in r_data['editions']:
-                    players_2024 = r_data['editions']['year_2024'].get('players', [])
+                if '${yearKeyCurrent}' in r_data['editions']:
+                    players_current = r_data['editions']['${yearKeyCurrent}'].get('players', [])
+                if '${yearKeyPrevious}' in r_data['editions']:
+                    players_previous = r_data['editions']['${yearKeyPrevious}'].get('players', [])
             elif 'players' in r_data:
-                players_2025 = r_data['players']
+                # Fallback para estrutura simples
+                players_current = r_data['players']
             elif 'data' in r_data and isinstance(r_data['data'], list):
-                players_2025 = r_data['data']
+                players_current = r_data['data']
                 
     except Exception as e:
         print(f"DEBUG: Erro ao ler resultados.json: {e}")
 
-    return h_list, players_2025, players_2024
+    return h_list, players_current, players_previous
 
-heuristics_data, players_2025, players_2024 = load_data()
+heuristics_data, players_current, players_previous = load_data()
 
 # Filtro Global Finance
-players_2025 = [p for p in players_2025 if p.get('departmentObj', {}).get('departmentSlug') != 'finance']
-players_2024 = [p for p in players_2024 if p.get('departmentObj', {}).get('departmentSlug') != 'finance']
+players_current = [p for p in players_current if p.get('departmentObj', {}).get('departmentSlug') != 'finance']
+players_previous = [p for p in players_previous if p.get('departmentObj', {}).get('departmentSlug') != 'finance']
 
 print(f"DEBUG: {len(heuristics_data)} heuristicas carregadas.")
-print(f"DEBUG: {len(players_2025)} players (2025) carregados.")
+print(f"DEBUG: {len(players_current)} players (${currentYear}) carregados.")
 
 # --- HELPER FUNCTIONS (USE ESTAS FUNCOES PARA EVITAR ERROS) ---
 
@@ -168,37 +177,37 @@ Para cada heurística solicitada (h_id):
    Use \`meta = get_heuristic_metadata(h_id)\`. Se None, pule.
    Regra: \`rule = meta.get('success', '=5')\`.
 
-2. **Processar 2025:**
-   - \`success_2025_names = []\`
-   - \`fail_2025_names = []\`
-   - Para cada \`p\` em \`players_2025\`:
+2. **Processar ${currentYear} (players_current):**
+   - \`success_current_names = []\`
+   - \`fail_current_names = []\`
+   - Para cada \`p\` em \`players_current\`:
      - Verifique elegibilidade (heurísticas grupo 8 ou scores existentes).
      - Obtenha scores: \`scores = get_scores_for_heuristic(p, h_id)\`
      - Se não tiver scores (e não for caso de N/A), considera falha ou ignora dependendo da regra de jornada.
      - **APLIQUE REGRA DE SUCESSO**:
        \`is_success = len(scores) > 0 and all(check_success(s, rule) for s in scores)\`
-     - Se \`is_success\`: \`success_2025_names.append(safe_get_name(p))\`
-     - Caso contrário (se tem scores mas falhou): \`fail_2025_names.append(safe_get_name(p))\`
+     - Se \`is_success\`: \`success_current_names.append(safe_get_name(p))\`
+     - Caso contrário (se tem scores mas falhou): \`fail_current_names.append(safe_get_name(p))\`
 
-3. **Processar Evolução (2024 vs 2025):**
+3. **Processar Evolução (${previousYear} vs ${currentYear}):**
    - \`improved_names = []\`
    - \`worsened_names = []\`
-   - Para cada \`p25\` em \`players_2025\`:
-     - \`slug = p25.get('slug')\`
-     - \`p24 = get_player_by_slug(slug, players_2024)\`
-     - Se \`p24\` existe:
-       - \`scores25 = get_scores_for_heuristic(p25, h_id)\`
-       - \`status25 = len(scores25) > 0 and all(check_success(s, rule) for s in scores25)\`
-       - \`scores24 = get_scores_for_heuristic(p24, h_id)\`
-       - \`status24 = len(scores24) > 0 and all(check_success(s, rule) for s in scores24)\`
+   - Para cada \`p_curr\` em \`players_current\`:
+     - \`slug = p_curr.get('slug')\`
+     - \`p_prev = get_player_by_slug(slug, players_previous)\`
+     - Se \`p_prev\` existe:
+       - \`scores_curr = get_scores_for_heuristic(p_curr, h_id)\`
+       - \`status_curr = len(scores_curr) > 0 and all(check_success(s, rule) for s in scores_curr)\`
+       - \`scores_prev = get_scores_for_heuristic(p_prev, h_id)\`
+       - \`status_prev = len(scores_prev) > 0 and all(check_success(s, rule) for s in scores_prev)\`
        
-       - Se (not status24 E status25): \`improved_names.append(safe_get_name(p25))\`
-       - Se (status24 E not status25): \`worsened_names.append(safe_get_name(p25))\`
+       - Se (not status_prev E status_curr): \`improved_names.append(safe_get_name(p_curr))\`
+       - Se (status_prev E not status_curr): \`worsened_names.append(safe_get_name(p_curr))\`
 
 4. **Imprimir Resultados:**
    Use OBRIGATORIAMENTE a função auxiliar:
-   \`print_player_list(f"A. Players com Êxito ({2025})", success_2025_names)\`
-   \`print_player_list(f"B. Players que Falharam ({2025})", fail_2025_names)\`
+   \`print_player_list(f"A. Players com Êxito ({currentYear})", success_current_names)\`
+   \`print_player_list(f"B. Players que Falharam ({currentYear})", fail_current_names)\`
    \`print_player_list("C. Players que Melhoraram", improved_names)\`
    \`print_player_list("D. Players que Pioraram", worsened_names)\`
 
@@ -269,6 +278,7 @@ NEGATIVA:
 {Qtd_Fracasso} de {Total_Elegiveis} e-commerces [frase do contexto reverso].
 \`\`\`
 `;
+};
 
 export const RESPONSE_FORMATTER_PROMPT = `
 Você é o assistente final.
