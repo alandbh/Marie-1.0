@@ -50,7 +50,7 @@ export const projects: Project[] = [
         previousName: "Flashblack 5",
         previousYear: 2024,
         resultsApi: {
-            url: `${BASE_API_URL}/api/result?current=retail6&previous=retail-5`,
+            url: `${BASE_API_URL}/api/result?project=retail6`,
             api_key: SHARED_API_KEY,
         },
         heuristicsApi: {
@@ -66,11 +66,27 @@ export const projects: Project[] = [
         previousName: "Garage SPLA 1",
         previousYear: 2024,
         resultsApi: {
-            url: `${BASE_API_URL}/api/result?current=rspla2&previous=latam-2`,
+            url: `${BASE_API_URL}/api/result?project=rspla2`,
             api_key: SHARED_API_KEY,
         },
         heuristicsApi: {
             url: `${BASE_API_URL}/api/heuristics?project=rspla2`,
+            api_key: SHARED_API_KEY,
+        },
+    },
+    {
+        slug: "retail-emea-1",
+        name: "Garage EMEA 1",
+        year: 2025,
+        previousSlug: null,
+        previousName: null,
+        previousYear: null,
+        resultsApi: {
+            url: `${BASE_API_URL}/api/result?project=retail-emea-1`,
+            api_key: SHARED_API_KEY,
+        },
+        heuristicsApi: {
+            url: `${BASE_API_URL}/api/heuristics?project=retail-emea-1`,
             api_key: SHARED_API_KEY,
         },
     },
