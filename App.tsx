@@ -409,14 +409,17 @@ export default function App() {
                     pythonOutput: pythonOutput,
                 },
             ]);
-        } catch (error) {
+        } catch (error: any) {
+            console.error("Process error:", error);
+            const friendlyMessage =
+                error?.message ||
+                "Ocorreu um erro crítico no processamento. Verifique o console.";
             setMessages((prev) => [
                 ...prev,
                 {
                     id: (Date.now() + 1).toString(),
                     role: "error",
-                    content:
-                        "Ocorreu um erro crítico no processamento. Verifique o console.",
+                    content: friendlyMessage,
                     timestamp: Date.now(),
                 },
             ]);
