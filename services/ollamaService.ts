@@ -16,6 +16,21 @@ interface OllamaConfig {
     model?: string;
 }
 
+const PYTHON_ONLY_INSTRUCTION = `
+Regras críticas para gerar o script Python:
+- Responda APENAS com código Python executável. Não use markdown e não explique.
+- Use somente bibliotecas padrão (json, unicodedata, math, re). Não use requests/pandas/etc.
+- Não tente importar ou instalar pacotes externos.
+- Considere que heuristicas.json e resultados.json já estão no filesystem e foram carregados pelo boilerplate do sistema.
+`;
+
+const DATASET_HINT = `
+Estrutura esperada dos arquivos disponíveis:
+- heuristicas.json: pode ser {"data": {"heuristics": [...]}} ou {"heuristics": [...]} ou uma lista direta.
+- resultados.json: pode ser {"editions": {"year_2025": {"players": [...]}, ...}} ou {"players": [...]} ou {"data": [...]}.
+Use SEMPRE o boilerplate fornecido (carrega dados, filtra finance) antes da lógica pedida.
+`;
+
 const getEnvValue = (key: string): string => {
     try {
         // @ts-ignore - Vite style env
@@ -50,6 +65,16 @@ export class OllamaService {
 
         this.baseUrl = config?.baseUrl || envBase;
         this.model = config?.model || envModel;
+    }
+
+    private sanitizePython(raw: string): string {
+        if (!raw) return "";
+        const fenceMatch = raw.match(/```(?:python)?\s*([\s\S]*?)```/i);
+        const code = fenceMatch ? fenceMatch[1] : raw;
+        return code
+            .replace(/```python/gi, "")
+            .replace(/```/g, "")
+            .trim();
     }
 
     private async chat(
@@ -109,20 +134,21 @@ export class OllamaService {
             project || undefined,
         );
 
+        const userMessage = `${userPrompt}
+
+${DATASET_HINT}
+Lembrete: responda somente com código Python executável, sem markdown ou texto extra.`;
+
         const responseText = await this.chat(
             [
                 { role: "system", content: systemInstruction },
-                { role: "user", content: userPrompt },
+                { role: "system", content: PYTHON_ONLY_INSTRUCTION },
+                { role: "user", content: userMessage },
             ],
             0.1,
         );
 
-        let script = responseText || "";
-        script = script
-            .replace(/```python/gi, "")
-            .replace(/```/g, "")
-            .trim();
-        return script;
+        return this.sanitizePython(responseText || "");
     }
 
     async generateNaturalLanguageResponse(
