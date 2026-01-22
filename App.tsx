@@ -638,50 +638,80 @@ export default function App() {
                                 automaticamente e iniciar o ambiente de análise
                                 segura com IA.
                             </p>
+                            {!state.isPythonReady && (
+                                <div className="flex items-center justify-center gap-2 text-sm text-neutral-400 mt-4">
+                                    <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                                    <span>
+                                        Preparando ambiente Python (Pyodide)...
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-6 w-full max-w-4xl">
-                            {projects.map((proj) => (
-                                <button
-                                    key={proj.slug}
-                                    onClick={() => handleSelectProject(proj)}
-                                    className="group relative bg-neutral-900 border border-neutral-800 hover:border-red-600/50 hover:bg-neutral-800/50 p-6 rounded-xl text-left transition-all duration-300 shadow-lg hover:shadow-red-900/10 flex flex-col gap-4"
-                                >
-                                    <div className="flex justify-between items-start">
-                                        <div className="bg-red-600/10 text-red-500 p-3 rounded-lg group-hover:bg-red-600 group-hover:text-white transition-colors">
-                                            <BarChart3 className="w-6 h-6" />
-                                        </div>
-                                        <span className="bg-neutral-950 text-neutral-500 text-xs px-2 py-1 rounded border border-neutral-800 font-mono">
-                                            {proj.year}
-                                        </span>
-                                    </div>
+                            {!state.isPythonReady
+                                ? Array.from({
+                                      length: projects.length || 4,
+                                  }).map((_, idx) => (
+                                      <div
+                                          key={idx}
+                                          className="group relative bg-neutral-900 border border-neutral-800 p-6 rounded-xl text-left shadow-lg flex flex-col gap-4 animate-pulse pointer-events-none"
+                                      >
+                                          <div className="flex justify-between items-start">
+                                              <div className="w-12 h-12 bg-neutral-800 rounded-lg" />
+                                              <div className="w-14 h-5 bg-neutral-800 rounded" />
+                                          </div>
+                                          <div className="space-y-3">
+                                              <div className="h-5 bg-neutral-800 rounded w-3/4" />
+                                              <div className="h-4 bg-neutral-800 rounded w-1/2" />
+                                          </div>
+                                          <div className="mt-2 pt-4 border-t border-neutral-800 flex items-center text-xs text-neutral-500 gap-4">
+                                              <div className="h-4 bg-neutral-800 rounded w-20" />
+                                              <div className="h-4 bg-neutral-800 rounded w-16" />
+                                          </div>
+                                      </div>
+                                  ))
+                                : projects.map((proj) => (
+                                      <button
+                                          key={proj.slug}
+                                          onClick={() => handleSelectProject(proj)}
+                                          className="group relative bg-neutral-900 border border-neutral-800 hover:border-red-600/50 hover:bg-neutral-800/50 p-6 rounded-xl text-left transition-all duration-300 shadow-lg hover:shadow-red-900/10 flex flex-col gap-4"
+                                      >
+                                          <div className="flex justify-between items-start">
+                                              <div className="bg-red-600/10 text-red-500 p-3 rounded-lg group-hover:bg-red-600 group-hover:text-white transition-colors">
+                                                  <BarChart3 className="w-6 h-6" />
+                                              </div>
+                                              <span className="bg-neutral-950 text-neutral-500 text-xs px-2 py-1 rounded border border-neutral-800 font-mono">
+                                                  {proj.year}
+                                              </span>
+                                          </div>
 
-                                    <div>
-                                        <h3 className="text-xl font-bold text-white group-hover:text-red-500 transition-colors">
-                                            {proj.name}
-                                        </h3>
-                                        <p className="text-sm text-neutral-500 mt-1">
-                                            Comparativo vs {proj.previousName} (
-                                            {proj.previousYear})
-                                        </p>
-                                    </div>
+                                          <div>
+                                              <h3 className="text-xl font-bold text-white group-hover:text-red-500 transition-colors">
+                                                  {proj.name}
+                                              </h3>
+                                              <p className="text-sm text-neutral-500 mt-1">
+                                                  Comparativo vs {proj.previousName} (
+                                                  {proj.previousYear})
+                                              </p>
+                                          </div>
 
-                                    <div className="mt-2 pt-4 border-t border-neutral-800 flex items-center text-xs text-neutral-400 gap-4">
-                                        <div className="flex items-center gap-1">
-                                            <Database className="w-3 h-3" />
-                                            <span>Auto-Fetch JSON</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <Cpu className="w-3 h-3" />
-                                            <span>Python Ready</span>
-                                        </div>
-                                    </div>
+                                          <div className="mt-2 pt-4 border-t border-neutral-800 flex items-center text-xs text-neutral-400 gap-4">
+                                              <div className="flex items-center gap-1">
+                                                  <Database className="w-3 h-3" />
+                                                  <span>Auto-Fetch JSON</span>
+                                              </div>
+                                              <div className="flex items-center gap-1">
+                                                  <Cpu className="w-3 h-3" />
+                                                  <span>Python Ready</span>
+                                              </div>
+                                          </div>
 
-                                    <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all text-red-500">
-                                        <ChevronRight />
-                                    </div>
-                                </button>
-                            ))}
+                                          <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all text-red-500">
+                                              <ChevronRight />
+                                          </div>
+                                      </button>
+                                  ))}
                         </div>
                     </div>
                 )}
