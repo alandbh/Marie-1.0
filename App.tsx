@@ -130,6 +130,15 @@ export default function App() {
 
     // UI State for Exit Confirmation
     const [exitConfirm, setExitConfirm] = useState(false);
+    const isHome = state.activeTab === "home";
+    const pythonReady = state.isPythonReady;
+    const statusLabel = pythonReady
+        ? "Ready to analyze"
+        : "Preparing my chemicals. Almost there...";
+    const statusDotClass = pythonReady
+        ? "bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.15)]"
+        : "bg-amber-400 shadow-[0_0_0_6px_rgba(251,146,60,0.18)]";
+    const statusTextClass = pythonReady ? "text-emerald-700" : "text-amber-700";
 
     // 1. Initialize Pyodide with Robust Polling
     useEffect(() => {
@@ -538,16 +547,41 @@ export default function App() {
     }
 
     return (
-        <div className="flex flex-col h-screen bg-slate-200 text-slate-800 font-sans">
+        <div
+            className={`relative flex flex-col min-h-screen font-sans overflow-hidden ${
+                isHome
+                    ? "bg-sky-50/60 text-slate-900 home-shell"
+                    : "bg-slate-200 text-slate-800"
+            }`}
+        >
+            {isHome && (
+                <div className="home-background pointer-events-none">
+                    <div className="mesh-gradient" />
+                    <div className="orb orb-a" />
+                    <div className="orb orb-b" />
+                    <div className="orb orb-c" />
+                    <div className="grid-overlay" />
+                </div>
+            )}
             {/* Header */}
-            <header className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-slate-400 bg-slate-100 backdrop-blur z-10">
+            <header
+                className={`flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b backdrop-blur z-10 ${
+                    isHome
+                        ? "bg-white/70 border-white/40 text-slate-800 shadow-[0_10px_50px_rgba(80,120,255,0.08)]"
+                        : "bg-neutral-950 border-neutral-800 text-white"
+                }`}
+            >
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-red-600 rounded-sm flex items-center justify-center font-bold text-white">
+                    <div className="w-8 h-8 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-500 rounded-lg flex items-center justify-center font-bold text-white shadow-[0_10px_30px_rgba(90,140,255,0.35)]">
                         M
                     </div>
                     <h1 className="text-lg font-bold tracking-tight">
                         Marie - UX Benchmark Analyst{" "}
-                        <span className="text-neutral-500 font-normal ml-2 text-sm">
+                        <span
+                            className={`font-normal ml-2 text-sm ${
+                                isHome ? "text-slate-500" : "text-neutral-500"
+                            }`}
+                        >
                             v0.0.1
                         </span>
                     </h1>
@@ -629,99 +663,110 @@ export default function App() {
             <main className="flex-1 overflow-hidden relative">
                 {/* --- HOME: PROJECT SELECTION --- */}
                 {state.activeTab === "home" && (
-                    <div className="h-full overflow-y-auto p-8 max-w-5xl mx-auto flex flex-col items-center">
-                        <div className="text-center mb-12 mt-10">
-                            <img
-                                src={MarieFace}
-                                alt="Marie"
-                                className="w-28 h-28 mx-auto mb-6"
-                            />
-
-                            <h2 className="text-4xl font-bold text-blue-500 mb-4">
-                                Cześć! My name is Marie 👋
-                            </h2>
-
-                            <p className="text-slate-600 max-w-lg mx-auto">
-                                A brilliant AI data scientist, ready to help you
-                                make amazing discoveries.
-                            </p>
-                            {!state.isPythonReady && (
-                                <div className="flex items-center justify-center gap-2 text-sm text-neutral-400 mt-4">
-                                    <Loader2 className="w-4 h-4 animate-spin text-red-500" />
-                                    <span>
-                                        Preparando ambiente Python (Pyodide)...
-                                    </span>
+                    <div className="relative h-full overflow-y-auto">
+                        <div className="relative z-10 max-w-5xl mx-auto px-6 py-12 flex flex-col items-center">
+                            <div className="text-center mb-12 mt-6 md:mt-10">
+                                <div className="relative inline-flex items-center justify-center mb-6">
+                                    <div className="avatar-glow" />
+                                    <img
+                                        src={MarieFace}
+                                        alt="Marie"
+                                        className="w-24 h-24 md:w-28 md:h-28 mx-auto relative drop-shadow-[0_20px_40px_rgba(94,126,255,0.35)]"
+                                    />
                                 </div>
-                            )}
-                        </div>
 
-                        <div className="grid md:grid-cols-2 gap-6 w-full max-w-4xl">
-                            {!state.isPythonReady
-                                ? Array.from({
-                                      length: projects.length || 4,
-                                  }).map((_, idx) => (
-                                      <div
-                                          key={idx}
-                                          className="group relative bg-neutral-900 border border-neutral-800 p-6 rounded-xl text-left shadow-lg flex flex-col gap-4 animate-pulse pointer-events-none"
-                                      >
-                                          <div className="flex justify-between items-start">
-                                              <div className="w-12 h-12 bg-neutral-800 rounded-lg" />
-                                              <div className="w-14 h-5 bg-neutral-800 rounded" />
-                                          </div>
-                                          <div className="space-y-3">
-                                              <div className="h-5 bg-neutral-800 rounded w-3/4" />
-                                              <div className="h-4 bg-neutral-800 rounded w-1/2" />
-                                          </div>
-                                          <div className="mt-2 pt-4 border-t border-neutral-800 flex items-center text-xs text-neutral-500 gap-4">
-                                              <div className="h-4 bg-neutral-800 rounded w-20" />
-                                              <div className="h-4 bg-neutral-800 rounded w-16" />
-                                          </div>
-                                      </div>
-                                  ))
-                                : projects.map((proj) => (
-                                      <button
-                                          key={proj.slug}
-                                          onClick={() =>
-                                              handleSelectProject(proj)
-                                          }
-                                          className="group relative bg-neutral-900 border border-neutral-800 hover:border-red-600/50 hover:bg-neutral-800/50 p-6 rounded-xl text-left transition-all duration-300 shadow-lg hover:shadow-red-900/10 flex flex-col gap-4"
-                                      >
-                                          <div className="flex justify-between items-start">
-                                              <div className="bg-red-600/10 text-red-500 p-3 rounded-lg group-hover:bg-red-600 group-hover:text-white transition-colors">
-                                                  <BarChart3 className="w-6 h-6" />
+                                <h2 className="text-4xl md:text-5xl font-black leading-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-500 drop-shadow-[0_15px_40px_rgba(79,130,255,0.25)]">
+                                    Cześć! My name is Marie 👋
+                                </h2>
+
+                                <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto">
+                                    The most brilliant (sorry, Einstein) AI data
+                                    scientist, ready to <br />
+                                    help you make <b>amazing discoveries.</b>
+                                </p>
+
+                                <div className="flex items-center justify-center gap-3 mt-7">
+                                    <span className="h-px w-10 bg-gradient-to-r from-transparent via-blue-400 to-transparent" />
+                                    <span className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_0_6px_rgba(80,130,255,0.12)]" />
+                                    <span className="h-px w-10 bg-gradient-to-r from-transparent via-blue-400 to-transparent" />
+                                </div>
+
+                                {!state.isPythonReady && (
+                                    <div className="inline-flex items-center justify-center gap-2 text-sm text-slate-500 mt-5 px-4 py-2 rounded-full bg-white/70 border border-white/80 shadow-sm backdrop-blur">
+                                        <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                                        <span>
+                                            Preparando ambiente Python
+                                            (Pyodide)...
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-6 w-full max-w-4xl">
+                                {!state.isPythonReady
+                                    ? Array.from({
+                                          length: projects.length || 4,
+                                      }).map((_, idx) => (
+                                          <div
+                                              key={idx}
+                                              className="relative glass-card p-6 rounded-2xl text-left flex flex-col gap-4 animate-pulse"
+                                          >
+                                              <div className="card-glow" />
+                                              <div className="flex justify-between items-start relative z-10">
+                                                  <div className="w-12 h-12 rounded-xl bg-white/50 border border-white/70" />
+                                                  <div className="h-6 w-14 rounded-full bg-white/40" />
                                               </div>
-                                              <span className="bg-neutral-950 text-neutral-500 text-xs px-2 py-1 rounded border border-neutral-800 font-mono">
-                                                  {proj.year}
-                                              </span>
-                                          </div>
-
-                                          <div>
-                                              <h3 className="text-xl font-bold text-white group-hover:text-red-500 transition-colors">
-                                                  {proj.name}
-                                              </h3>
-                                              <p className="text-sm text-neutral-500 mt-1">
-                                                  Comparativo vs{" "}
-                                                  {proj.previousName} (
-                                                  {proj.previousYear})
-                                              </p>
-                                          </div>
-
-                                          <div className=" hidden mt-2 pt-4 border-t border-neutral-800 __flex items-center text-xs text-neutral-400 gap-4">
-                                              <div className="flex items-center gap-1">
-                                                  <Database className="w-3 h-3" />
-                                                  <span>Auto-Fetch JSON</span>
-                                              </div>
-                                              <div className="flex items-center gap-1">
-                                                  <Cpu className="w-3 h-3" />
-                                                  <span>Python Ready</span>
+                                              <div className="space-y-3 relative z-10">
+                                                  <div className="h-5 bg-white/50 rounded w-3/4" />
+                                                  <div className="h-4 bg-white/40 rounded w-1/2" />
                                               </div>
                                           </div>
+                                      ))
+                                    : projects.map((proj) => (
+                                          <button
+                                              key={proj.slug}
+                                              onClick={() =>
+                                                  handleSelectProject(proj)
+                                              }
+                                              className="group relative glass-card p-6 rounded-2xl text-left transition-all duration-500 shadow-[0_25px_80px_rgba(92,133,255,0.16)] hover:-translate-y-1 hover:shadow-[0_30px_90px_rgba(92,133,255,0.24)]"
+                                          >
+                                              <div className="card-glow" />
+                                              <div className="flex justify-between items-start relative z-10">
+                                                  <div className="icon-pill group-hover:rotate-3">
+                                                      <BarChart3 className="w-5 h-5" />
+                                                  </div>
+                                                  <span className="year-badge">
+                                                      {proj.year}
+                                                  </span>
+                                              </div>
 
-                                          <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all text-red-500">
-                                              <ChevronRight />
-                                          </div>
-                                      </button>
-                                  ))}
+                                              <div className="relative z-10">
+                                                  <h3 className="text-xl font-semibold text-[#1f2748] group-hover:text-[#2356ff] transition-colors">
+                                                      {proj.name}
+                                                  </h3>
+                                                  <p className="text-sm text-slate-600 mt-1">
+                                                      Comparativo vs{" "}
+                                                      {proj.previousName} (
+                                                      {proj.previousYear})
+                                                  </p>
+                                              </div>
+
+                                              <span className="sparkle" />
+                                              <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all text-sky-500">
+                                                  <ChevronRight />
+                                              </div>
+                                          </button>
+                                      ))}
+                            </div>
+
+                            <div
+                                className={`mt-8 flex items-center gap-2 text-sm bg-white/70 px-4 py-2 rounded-full border border-white/80 shadow-sm backdrop-blur ${statusTextClass}`}
+                            >
+                                <span
+                                    className={`h-2 w-2 rounded-full animate-pulse ${statusDotClass}`}
+                                />
+                                <span>{statusLabel}</span>
+                            </div>
                         </div>
                     </div>
                 )}
