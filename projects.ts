@@ -44,7 +44,7 @@ const BASE_API_URL = getEnv("BASE_API_URL") || "https://baseurldemo";
 export const projects: Project[] = [
     {
         slug: "retail6",
-        name: "Flashblack 6 (Retail)",
+        name: "Flashblack 6",
         year: 2025,
         previousSlug: "retail-5",
         previousName: "Flashblack 5",

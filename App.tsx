@@ -542,12 +542,12 @@ export default function App() {
             <header className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-neutral-800 bg-neutral-900/50 backdrop-blur z-10">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-red-600 rounded-sm flex items-center justify-center font-bold text-white">
-                        R
+                        M
                     </div>
                     <h1 className="text-lg font-bold tracking-tight">
-                        UX Benchmark Analyst{" "}
+                        Marie - UX Benchmark Analyst{" "}
                         <span className="text-neutral-500 font-normal ml-2 text-sm">
-                            v3.0
+                            v0.0.1
                         </span>
                     </h1>
                 </div>
@@ -634,9 +634,8 @@ export default function App() {
                                 Selecione o Estudo
                             </h2>
                             <p className="text-neutral-400 max-w-lg mx-auto">
-                                Escolha um projeto abaixo para carregar os dados
-                                automaticamente e iniciar o ambiente de análise
-                                segura com IA.
+                                Escolha um projeto abaixo e pergunte qualquer
+                                coisa sobre o estudo.
                             </p>
                             {!state.isPythonReady && (
                                 <div className="flex items-center justify-center gap-2 text-sm text-neutral-400 mt-4">
@@ -674,7 +673,9 @@ export default function App() {
                                 : projects.map((proj) => (
                                       <button
                                           key={proj.slug}
-                                          onClick={() => handleSelectProject(proj)}
+                                          onClick={() =>
+                                              handleSelectProject(proj)
+                                          }
                                           className="group relative bg-neutral-900 border border-neutral-800 hover:border-red-600/50 hover:bg-neutral-800/50 p-6 rounded-xl text-left transition-all duration-300 shadow-lg hover:shadow-red-900/10 flex flex-col gap-4"
                                       >
                                           <div className="flex justify-between items-start">
@@ -691,12 +692,13 @@ export default function App() {
                                                   {proj.name}
                                               </h3>
                                               <p className="text-sm text-neutral-500 mt-1">
-                                                  Comparativo vs {proj.previousName} (
+                                                  Comparativo vs{" "}
+                                                  {proj.previousName} (
                                                   {proj.previousYear})
                                               </p>
                                           </div>
 
-                                          <div className="mt-2 pt-4 border-t border-neutral-800 flex items-center text-xs text-neutral-400 gap-4">
+                                          <div className=" hidden mt-2 pt-4 border-t border-neutral-800 __flex items-center text-xs text-neutral-400 gap-4">
                                               <div className="flex items-center gap-1">
                                                   <Database className="w-3 h-3" />
                                                   <span>Auto-Fetch JSON</span>
