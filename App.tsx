@@ -131,6 +131,7 @@ export default function App() {
     // UI State for Exit Confirmation
     const [exitConfirm, setExitConfirm] = useState(false);
     const isHome = state.activeTab === "home";
+    const isChat = state.activeTab === "chat";
     const pythonReady = state.isPythonReady;
     const statusLabel = pythonReady
         ? "Ready to analyze"
@@ -139,6 +140,16 @@ export default function App() {
         ? "bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.15)]"
         : "bg-amber-400 shadow-[0_0_0_6px_rgba(251,146,60,0.18)]";
     const statusTextClass = pythonReady ? "text-emerald-700" : "text-amber-700";
+    const shellClass = isHome
+        ? "bg-sky-50/60 text-slate-900 home-shell"
+        : isChat
+          ? "bg-sky-50/60 text-slate-900 chat-shell"
+          : "bg-slate-200 text-slate-800";
+    const headerTheme =
+        isHome || isChat
+            ? "bg-white/80 border-white/60 text-slate-800 shadow-[0_10px_50px_rgba(80,120,255,0.08)]"
+            : "bg-neutral-950 border-neutral-800 text-white";
+    const headerSubtleText = isHome || isChat ? "text-slate-500" : "text-neutral-500";
 
     // 1. Initialize Pyodide with Robust Polling
     useEffect(() => {
@@ -212,7 +223,10 @@ export default function App() {
 
     // Scroll to bottom
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        messagesEndRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+        });
     }, [messages, processingStep]);
 
     const handleSetApiKey = () => {
@@ -548,14 +562,12 @@ export default function App() {
 
     return (
         <div
-            className={`relative flex flex-col min-h-screen font-sans overflow-hidden ${
-                isHome
-                    ? "bg-sky-50/60 text-slate-900 home-shell"
-                    : "bg-slate-200 text-slate-800"
-            }`}
+            className={`relative flex flex-col min-h-screen font-sans overflow-hidden ${shellClass}`}
         >
-            {isHome && (
-                <div className="home-background pointer-events-none">
+            {(isHome || isChat) && (
+                <div
+                    className={`home-background pointer-events-none ${isChat ? "chat-mode" : ""}`}
+                >
                     <div className="mesh-gradient" />
                     <div className="orb orb-a" />
                     <div className="orb orb-b" />
@@ -565,11 +577,7 @@ export default function App() {
             )}
             {/* Header */}
             <header
-                className={`flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b backdrop-blur z-10 ${
-                    isHome
-                        ? "bg-white/70 border-white/40 text-slate-800 shadow-[0_10px_50px_rgba(80,120,255,0.08)]"
-                        : "bg-neutral-950 border-neutral-800 text-white"
-                }`}
+                className={`flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b backdrop-blur z-10 ${headerTheme}`}
             >
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-500 rounded-lg flex items-center justify-center font-bold text-white shadow-[0_10px_30px_rgba(90,140,255,0.35)]">
@@ -578,9 +586,7 @@ export default function App() {
                     <h1 className="text-lg font-bold tracking-tight">
                         Marie - UX Benchmark Analyst{" "}
                         <span
-                            className={`font-normal ml-2 text-sm ${
-                                isHome ? "text-slate-500" : "text-neutral-500"
-                            }`}
+                            className={`font-normal ml-2 text-sm ${headerSubtleText}`}
                         >
                             v0.0.1
                         </span>
@@ -618,10 +624,14 @@ export default function App() {
                     {state.activeTab === "chat" && state.selectedProject && (
                         <div className="flex items-center gap-4">
                             <div className="hidden md:flex flex-col items-end mr-2">
-                                <span className="text-sm font-bold text-white">
+                                <span
+                                    className={`text-sm font-bold ${isChat ? "text-slate-800" : "text-white"}`}
+                                >
                                     {state.selectedProject.name}
                                 </span>
-                                <span className="text-xs text-neutral-500">
+                                <span
+                                    className={`text-xs ${isChat ? "text-slate-500" : "text-neutral-500"}`}
+                                >
                                     {state.selectedProject.year} vs{" "}
                                     {state.selectedProject.previousYear}
                                 </span>
@@ -631,7 +641,9 @@ export default function App() {
                                 className={`text-xs flex items-center gap-2 px-3 py-1.5 rounded transition-all duration-300 ${
                                     exitConfirm
                                         ? "bg-red-600 text-white hover:bg-red-700 animate-pulse"
-                                        : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+                                        : isChat
+                                          ? "bg-white/80 text-slate-700 border border-white/70 hover:bg-white"
+                                          : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
                                 }`}
                             >
                                 {exitConfirm ? (
@@ -821,288 +833,318 @@ export default function App() {
                 )}
 
                 {/* --- CHAT TAB --- */}
-                {state.activeTab === "chat" && (
-                    <div className="flex flex-col h-full max-w-4xl mx-auto border-x border-neutral-900 bg-black">
-                        {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                            {messages.length === 0 && (
-                                <div className="text-center mt-20 opacity-50 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                                    <div className="w-16 h-16 bg-neutral-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-neutral-800">
-                                        <Terminal className="w-8 h-8 text-red-600" />
+                {isChat && (
+                    <div className="relative h-full overflow-hidden">
+                        <div className="relative z-10 max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12 h-full flex flex-col">
+                            <div className="chat-pane flex flex-col gap-6 h-full min-h-0">
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="icon-pill">
+                                            <BarChart3 className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[11px] uppercase tracking-[0.08em] text-slate-500">
+                                                Projeto em análise
+                                            </p>
+                                            <p className="text-base md:text-lg font-semibold text-slate-800">
+                                                {state.selectedProject?.name ||
+                                                    "Selecione um projeto"}
+                                            </p>
+                                            {state.selectedProject && (
+                                                <p className="text-xs text-slate-500">
+                                                    {state.selectedProject.year} vs{" "}
+                                                    {state.selectedProject.previousYear}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
-                                    <h3 className="text-xl font-bold mb-2">
-                                        {state.selectedProject
-                                            ? `Analisando ${state.selectedProject.name}`
-                                            : "Aguardando Análise"}
-                                    </h3>
-                                    <p className="text-sm max-w-md mx-auto text-neutral-400">
-                                        Digite o número da heurística (ex:
-                                        "3.1") para iniciar. Os dados foram
-                                        carregados na memória do Python.
-                                    </p>
-                                </div>
-                            )}
-
-                            {messages.map((msg) => (
-                                <div
-                                    key={msg.id}
-                                    className="flex flex-col gap-2"
-                                >
                                     <div
-                                        className={`flex gap-4 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+                                        className={`inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full border border-white/70 bg-white/80 shadow-sm backdrop-blur ${statusTextClass}`}
                                     >
-                                        <div
-                                            className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                                msg.role === "user"
-                                                    ? "bg-white text-black"
-                                                    : msg.role === "error"
-                                                      ? "bg-red-900 text-white"
-                                                      : "bg-red-600 text-white"
-                                            }`}
-                                        >
-                                            {msg.role === "user" ? (
-                                                <User className="w-5 h-5" />
-                                            ) : msg.role === "error" ? (
-                                                <AlertTriangle className="w-5 h-5" />
-                                            ) : (
-                                                <Cpu className="w-5 h-5" />
-                                            )}
-                                        </div>
-                                        <div
-                                            className={`p-4 rounded-lg text-sm leading-relaxed max-w-[85%] overflow-hidden ${
-                                                msg.role === "user"
-                                                    ? "bg-neutral-900 text-neutral-200"
-                                                    : msg.role === "error"
-                                                      ? "bg-red-950/30 border border-red-900 text-red-200"
-                                                      : "bg-neutral-950 border border-neutral-800 text-neutral-300"
-                                            }`}
-                                        >
-                                            {msg.role === "user" ? (
-                                                msg.content
-                                            ) : (
-                                                <ReactMarkdown
-                                                    className="prose prose-invert prose-sm max-w-none"
-                                                    components={{
-                                                        h1: ({
-                                                            node,
-                                                            ...props
-                                                        }) => (
-                                                            <h1
-                                                                className="text-xl font-bold text-white mb-4 pb-2 border-b border-neutral-800"
-                                                                {...props}
-                                                            />
-                                                        ),
-                                                        h2: ({
-                                                            node,
-                                                            ...props
-                                                        }) => (
-                                                            <h2
-                                                                className="text-lg font-bold text-white mt-6 mb-3"
-                                                                {...props}
-                                                            />
-                                                        ),
-                                                        h3: ({
-                                                            node,
-                                                            ...props
-                                                        }) => (
-                                                            <h3
-                                                                className="text-md font-bold text-red-500 mt-4 mb-2"
-                                                                {...props}
-                                                            />
-                                                        ),
-                                                        ul: ({
-                                                            node,
-                                                            ...props
-                                                        }) => (
-                                                            <ul
-                                                                className="list-disc list-inside space-y-1 mb-4 text-neutral-300"
-                                                                {...props}
-                                                            />
-                                                        ),
-                                                        ol: ({
-                                                            node,
-                                                            ...props
-                                                        }) => (
-                                                            <ol
-                                                                className="list-decimal list-inside space-y-1 mb-4 text-neutral-300"
-                                                                {...props}
-                                                            />
-                                                        ),
-                                                        li: ({
-                                                            node,
-                                                            ...props
-                                                        }) => (
-                                                            <li
-                                                                className="text-sm ml-2"
-                                                                {...props}
-                                                            />
-                                                        ),
-                                                        p: ({
-                                                            node,
-                                                            ...props
-                                                        }) => (
-                                                            <p
-                                                                className="mb-3 text-sm text-neutral-300 leading-relaxed"
-                                                                {...props}
-                                                            />
-                                                        ),
-                                                        strong: ({
-                                                            node,
-                                                            ...props
-                                                        }) => (
-                                                            <strong
-                                                                className="font-bold text-white"
-                                                                {...props}
-                                                            />
-                                                        ),
-                                                        code: ({
-                                                            node,
-                                                            className,
-                                                            children,
-                                                            ...props
-                                                        }) => {
-                                                            const match =
-                                                                /language-(\w+)/.exec(
-                                                                    className ||
-                                                                        "",
-                                                                );
-                                                            return match ? (
-                                                                <code
-                                                                    className="block bg-black p-2 rounded text-xs font-mono my-2 overflow-x-auto"
-                                                                    {...props}
-                                                                >
-                                                                    {children}
-                                                                </code>
-                                                            ) : (
-                                                                <code
-                                                                    className="bg-neutral-800 px-1 py-0.5 rounded text-xs font-mono text-red-400"
-                                                                    {...props}
-                                                                >
-                                                                    {children}
-                                                                </code>
-                                                            );
-                                                        },
-                                                        hr: ({
-                                                            node,
-                                                            ...props
-                                                        }) => (
-                                                            <hr
-                                                                className="border-neutral-800 my-6"
-                                                                {...props}
-                                                            />
-                                                        ),
-                                                        blockquote: ({
-                                                            node,
-                                                            ...props
-                                                        }) => (
-                                                            <blockquote
-                                                                className="border-l-4 border-red-900 pl-4 py-1 my-4 text-neutral-400 italic bg-neutral-900/50 rounded-r"
-                                                                {...props}
-                                                            />
-                                                        ),
-                                                    }}
-                                                >
-                                                    {msg.content}
-                                                </ReactMarkdown>
-                                            )}
-                                        </div>
+                                        <span
+                                            className={`h-2 w-2 rounded-full animate-pulse ${statusDotClass}`}
+                                        />
+                                        <span>{statusLabel}</span>
                                     </div>
+                                </div>
 
-                                    {msg.role === "assistant" &&
-                                        (msg.script || msg.pythonOutput) && (
-                                            <div className="ml-12 max-w-[85%]">
-                                                <details className="group">
-                                                    <summary className="text-xs flex items-center gap-2 text-neutral-500 hover:text-neutral-300 cursor-pointer list-none select-none transition-colors">
-                                                        <Code className="w-3 h-3" />
-                                                        <span>
-                                                            View Generated
-                                                            Script & Logs
-                                                        </span>
-                                                    </summary>
-                                                    <div className="mt-2 space-y-2">
-                                                        {msg.script && (
-                                                            <div className="bg-neutral-950 border border-neutral-800 rounded p-2 overflow-x-auto">
-                                                                <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
-                                                                    {msg.script}
-                                                                </pre>
-                                                            </div>
-                                                        )}
-                                                        {msg.pythonOutput && (
-                                                            <div className="bg-neutral-950 border border-neutral-800 rounded p-2 overflow-x-auto">
-                                                                <pre className="text-xs text-yellow-400 font-mono whitespace-pre-wrap">
-                                                                    {
-                                                                        msg.pythonOutput
-                                                                    }
-                                                                </pre>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </details>
+                                {/* Messages */}
+                                <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                                    <div className="chat-feed flex-1 overflow-y-auto space-y-5 pr-1">
+                                        {messages.length === 0 && (
+                                            <div className="text-center mt-10 md:mt-16 opacity-70 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                                <div className="w-14 h-14 bg-white/70 rounded-full flex items-center justify-center mx-auto mb-3 border border-white/80 shadow-lg">
+                                                    <Terminal className="w-7 h-7 text-sky-600" />
+                                                </div>
+                                                <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                                                    {state.selectedProject
+                                                        ? `Analisando ${state.selectedProject.name}`
+                                                        : "Aguardando análise"}
+                                                </h3>
+                                                <p className="text-sm max-w-md mx-auto text-slate-600">
+                                                    Digite o número da heurística (ex: "3.1")
+                                                    para iniciar. Os dados foram carregados na memória
+                                                    do Python.
+                                                </p>
                                             </div>
                                         )}
-                                </div>
-                            ))}
 
-                            {processingStep !== ProcessingStep.IDLE && (
-                                <div className="flex gap-4 ml-12">
-                                    <div className="p-3 text-sm text-neutral-500 italic flex items-center gap-2">
-                                        <Loader2 className="w-3 h-3 animate-spin" />
-                                        {processingStep}
+                                        {messages.map((msg) => (
+                                            <div key={msg.id} className="flex flex-col gap-2">
+                                                <div
+                                                    className={`flex gap-3 md:gap-4 ${
+                                                        msg.role === "user" ? "flex-row-reverse" : ""
+                                                    }`}
+                                                >
+                                                    <div
+                                                        className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 shadow-md ${
+                                                            msg.role === "user"
+                                                                ? "bg-gradient-to-br from-sky-500 to-indigo-500 text-white"
+                                                                : msg.role === "error"
+                                                                  ? "bg-rose-500 text-white"
+                                                                  : "bg-indigo-100 text-indigo-600"
+                                                        }`}
+                                                    >
+                                                        {msg.role === "user" ? (
+                                                            <User className="w-5 h-5" />
+                                                        ) : msg.role === "error" ? (
+                                                            <AlertTriangle className="w-5 h-5" />
+                                                        ) : (
+                                                            <Cpu className="w-5 h-5" />
+                                                        )}
+                                                    </div>
+                                                    <div
+                                                        className={`chat-bubble max-w-[85%] ${
+                                                            msg.role === "user"
+                                                                ? "bubble-user"
+                                                                : msg.role === "error"
+                                                                  ? "bubble-error"
+                                                                  : "bubble-assistant"
+                                                        }`}
+                                                    >
+                                                        {msg.role === "user" ? (
+                                                            <p className="text-sm leading-relaxed text-white">
+                                                                {msg.content}
+                                                            </p>
+                                                        ) : (
+                                                            <ReactMarkdown
+                                                                className="markdown-body"
+                                                                components={{
+                                                                    h1: ({
+                                                                        node,
+                                                                        ...props
+                                                                    }) => (
+                                                                        <h1
+                                                                            className="text-xl font-bold text-slate-900 mb-3 pb-2 border-b border-slate-200"
+                                                                            {...props}
+                                                                        />
+                                                                    ),
+                                                                    h2: ({
+                                                                        node,
+                                                                        ...props
+                                                                    }) => (
+                                                                        <h2
+                                                                            className="text-lg font-semibold text-slate-900 mt-5 mb-2"
+                                                                            {...props}
+                                                                        />
+                                                                    ),
+                                                                    h3: ({
+                                                                        node,
+                                                                        ...props
+                                                                    }) => (
+                                                                        <h3
+                                                                            className="text-md font-semibold text-sky-700 mt-4 mb-2"
+                                                                            {...props}
+                                                                        />
+                                                                    ),
+                                                                    ul: ({
+                                                                        node,
+                                                                        ...props
+                                                                    }) => (
+                                                                        <ul
+                                                                            className="list-disc list-inside space-y-1 mb-3 text-slate-700"
+                                                                            {...props}
+                                                                        />
+                                                                    ),
+                                                                    ol: ({
+                                                                        node,
+                                                                        ...props
+                                                                    }) => (
+                                                                        <ol
+                                                                            className="list-decimal list-inside space-y-1 mb-3 text-slate-700"
+                                                                            {...props}
+                                                                        />
+                                                                    ),
+                                                                    li: ({
+                                                                        node,
+                                                                        ...props
+                                                                    }) => (
+                                                                        <li
+                                                                            className="text-sm ml-2"
+                                                                            {...props}
+                                                                        />
+                                                                    ),
+                                                                    p: ({
+                                                                        node,
+                                                                        ...props
+                                                                    }) => (
+                                                                        <p
+                                                                            className="mb-3 text-sm text-slate-700 leading-relaxed"
+                                                                            {...props}
+                                                                        />
+                                                                    ),
+                                                                    strong: ({
+                                                                        node,
+                                                                        ...props
+                                                                    }) => (
+                                                                        <strong
+                                                                            className="font-bold text-slate-900"
+                                                                            {...props}
+                                                                        />
+                                                                    ),
+                                                                    code: ({
+                                                                        node,
+                                                                        className,
+                                                                        children,
+                                                                        ...props
+                                                                    }) => {
+                                                                        const match =
+                                                                            /language-(\w+)/.exec(
+                                                                                className || "",
+                                                                            );
+                                                                        return match ? (
+                                                                            <code
+                                                                                className="block bg-slate-900 text-emerald-200 p-3 rounded-xl text-xs font-mono my-3 overflow-x-auto"
+                                                                                {...props}
+                                                                            >
+                                                                                {children}
+                                                                            </code>
+                                                                        ) : (
+                                                                            <code
+                                                                                className="bg-slate-900/80 text-emerald-200 px-1.5 py-0.5 rounded text-[12px] font-mono"
+                                                                                {...props}
+                                                                            >
+                                                                                {children}
+                                                                            </code>
+                                                                        );
+                                                                    },
+                                                                    hr: ({
+                                                                        node,
+                                                                        ...props
+                                                                    }) => (
+                                                                        <hr
+                                                                            className="border-slate-200 my-5"
+                                                                            {...props}
+                                                                        />
+                                                                    ),
+                                                                    blockquote: ({
+                                                                        node,
+                                                                        ...props
+                                                                    }) => (
+                                                                        <blockquote
+                                                                            className="border-l-4 border-sky-200 pl-4 py-1 my-4 text-slate-700 italic bg-white/60 rounded-r"
+                                                                            {...props}
+                                                                        />
+                                                                    ),
+                                                                }}
+                                                            >
+                                                                {msg.content}
+                                                            </ReactMarkdown>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {msg.role === "assistant" &&
+                                                    (msg.script || msg.pythonOutput) && (
+                                                        <div className="ml-12 md:ml-14 max-w-[85%]">
+                                                            <details className="group">
+                                                                <summary className="text-xs flex items-center gap-2 text-slate-500 hover:text-slate-700 cursor-pointer list-none select-none transition-colors">
+                                                                    <Code className="w-3 h-3" />
+                                                                    <span>
+                                                                        View Generated Script & Logs
+                                                                    </span>
+                                                                </summary>
+                                                                <div className="mt-2 space-y-2">
+                                                                    {msg.script && (
+                                                                        <div className="log-card">
+                                                                            <pre className="text-xs text-emerald-200 font-mono whitespace-pre-wrap">
+                                                                                {msg.script}
+                                                                            </pre>
+                                                                        </div>
+                                                                    )}
+                                                                    {msg.pythonOutput && (
+                                                                        <div className="log-card">
+                                                                            <pre className="text-xs text-amber-200 font-mono whitespace-pre-wrap">
+                                                                                {msg.pythonOutput}
+                                                                            </pre>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </details>
+                                                        </div>
+                                                    )}
+                                            </div>
+                                        ))}
+
+                                        {processingStep !== ProcessingStep.IDLE && (
+                                            <div className="flex gap-3 ml-10 md:ml-12">
+                                                <div className="px-3 py-2 text-sm text-slate-500 italic flex items-center gap-2 bg-white/70 border border-white/80 rounded-full backdrop-blur">
+                                                    <Loader2 className="w-4 h-4 animate-spin text-sky-600" />
+                                                    {processingStep}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div ref={messagesEndRef} />
                                     </div>
                                 </div>
-                            )}
 
-                            <div ref={messagesEndRef} />
-                        </div>
-
-                        {/* Input Area */}
-                        <div className="p-4 border-t border-neutral-800 bg-neutral-900/30 backdrop-blur">
-                            {messages.length > 0 ? (
-                                <div className="flex flex-col items-center justify-center gap-3 py-2 min-h-[52px]">
-                                    {processingStep !== ProcessingStep.IDLE ? (
-                                        <p className="text-xs text-neutral-500 text-center animate-pulse">
-                                            Processando análise...
-                                        </p>
+                                {/* Input Area */}
+                                <div className="input-shell p-4 md:p-5 rounded-2xl border border-white/80 bg-white/80 backdrop-blur shadow-[0_20px_60px_rgba(90,130,255,0.12)]">
+                                    {messages.length > 0 ? (
+                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                                            {processingStep !== ProcessingStep.IDLE ? (
+                                                <p className="text-xs text-slate-500 text-center animate-pulse">
+                                                    Processando análise...
+                                                </p>
+                                            ) : (
+                                                <button
+                                                    onClick={handleResetSession}
+                                                    className="flex items-center gap-2 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 text-white px-5 py-2.5 rounded-full font-semibold transition-all shadow-[0_12px_30px_rgba(80,120,255,0.35)] hover:shadow-[0_14px_36px_rgba(80,120,255,0.45)]"
+                                                >
+                                                    <Sparkles className="w-4 h-4" />
+                                                    Iniciar Nova Análise
+                                                </button>
+                                            )}
+                                        </div>
                                     ) : (
-                                        <button
-                                            onClick={handleResetSession}
-                                            className="flex items-center gap-2 bg-white text-black hover:bg-neutral-200 px-6 py-3 rounded-full font-bold transition-all shadow-lg hover:shadow-white/20"
-                                        >
-                                            <Sparkles className="w-4 h-4" />
-                                            Iniciar Nova Análise
-                                        </button>
+                                        <div className="relative flex items-center">
+                                            <input
+                                                type="text"
+                                                value={input}
+                                                onChange={(e) => setInput(e.target.value)}
+                                                onKeyDown={handleKeyDown}
+                                                placeholder="Digite o número da heurística..."
+                                                disabled={
+                                                    !state.isPythonReady ||
+                                                    processingStep !== ProcessingStep.IDLE
+                                                }
+                                                className="w-full bg-white/80 border border-white/80 rounded-xl pl-4 pr-14 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 disabled:opacity-60 transition-all"
+                                            />
+                                            <button
+                                                onClick={handleSendMessage}
+                                                disabled={
+                                                    !input.trim() ||
+                                                    processingStep !== ProcessingStep.IDLE
+                                                }
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-2 rounded-lg text-white bg-gradient-to-r from-sky-500 to-indigo-500 shadow-[0_10px_25px_rgba(79,130,255,0.35)] hover:shadow-[0_12px_30px_rgba(79,130,255,0.45)] transition-all disabled:opacity-40"
+                                            >
+                                                <Play className="w-5 h-5" />
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
-                            ) : (
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        value={input}
-                                        onChange={(e) =>
-                                            setInput(e.target.value)
-                                        }
-                                        onKeyDown={handleKeyDown}
-                                        placeholder="Digite o número da heurística..."
-                                        disabled={
-                                            !state.isPythonReady ||
-                                            processingStep !==
-                                                ProcessingStep.IDLE
-                                        }
-                                        className="w-full bg-neutral-950 border border-neutral-700 rounded-lg pl-4 pr-12 py-3 focus:outline-none focus:border-red-600 disabled:opacity-50 transition-colors"
-                                    />
-                                    <button
-                                        onClick={handleSendMessage}
-                                        disabled={
-                                            !input.trim() ||
-                                            processingStep !==
-                                                ProcessingStep.IDLE
-                                        }
-                                        className="absolute right-2 top-2 p-1.5 bg-neutral-800 hover:bg-red-600 rounded text-neutral-400 hover:text-white transition-all disabled:opacity-0"
-                                    >
-                                        <Play className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                 )}
