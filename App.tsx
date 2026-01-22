@@ -149,7 +149,8 @@ export default function App() {
         isHome || isChat
             ? "bg-white/80 border-white/60 text-slate-800 shadow-[0_10px_50px_rgba(80,120,255,0.08)]"
             : "bg-neutral-950 border-neutral-800 text-white";
-    const headerSubtleText = isHome || isChat ? "text-slate-500" : "text-neutral-500";
+    const headerSubtleText =
+        isHome || isChat ? "text-slate-500" : "text-neutral-500";
 
     // 1. Initialize Pyodide with Robust Polling
     useEffect(() => {
@@ -675,7 +676,7 @@ export default function App() {
             <main className="flex-1 overflow-hidden relative">
                 {/* --- HOME: PROJECT SELECTION --- */}
                 {state.activeTab === "home" && (
-                    <div className="relative h-full overflow-y-auto">
+                    <div className="relative h-full">
                         <div className="relative z-10 max-w-5xl mx-auto px-6 py-12 flex flex-col items-center">
                             <div className="text-center mb-12 mt-6 md:mt-10">
                                 <div className="relative inline-flex items-center justify-center mb-6">
@@ -852,8 +853,12 @@ export default function App() {
                                             </p>
                                             {state.selectedProject && (
                                                 <p className="text-xs text-slate-500">
-                                                    {state.selectedProject.year} vs{" "}
-                                                    {state.selectedProject.previousYear}
+                                                    {state.selectedProject.year}{" "}
+                                                    vs{" "}
+                                                    {
+                                                        state.selectedProject
+                                                            .previousYear
+                                                    }
                                                 </p>
                                             )}
                                         </div>
@@ -882,32 +887,41 @@ export default function App() {
                                                         : "Aguardando análise"}
                                                 </h3>
                                                 <p className="text-sm max-w-md mx-auto text-slate-600">
-                                                    Digite o número da heurística (ex: "3.1")
-                                                    para iniciar. Os dados foram carregados na memória
-                                                    do Python.
+                                                    Digite o número da
+                                                    heurística (ex: "3.1") para
+                                                    iniciar. Os dados foram
+                                                    carregados na memória do
+                                                    Python.
                                                 </p>
                                             </div>
                                         )}
 
                                         {messages.map((msg) => (
-                                            <div key={msg.id} className="flex flex-col gap-2">
+                                            <div
+                                                key={msg.id}
+                                                className="flex flex-col gap-2"
+                                            >
                                                 <div
                                                     className={`flex gap-3 md:gap-4 ${
-                                                        msg.role === "user" ? "flex-row-reverse" : ""
+                                                        msg.role === "user"
+                                                            ? "flex-row-reverse"
+                                                            : ""
                                                     }`}
                                                 >
                                                     <div
                                                         className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 shadow-md ${
                                                             msg.role === "user"
                                                                 ? "bg-gradient-to-br from-sky-500 to-indigo-500 text-white"
-                                                                : msg.role === "error"
+                                                                : msg.role ===
+                                                                    "error"
                                                                   ? "bg-rose-500 text-white"
                                                                   : "bg-indigo-100 text-indigo-600"
                                                         }`}
                                                     >
                                                         {msg.role === "user" ? (
                                                             <User className="w-5 h-5" />
-                                                        ) : msg.role === "error" ? (
+                                                        ) : msg.role ===
+                                                          "error" ? (
                                                             <AlertTriangle className="w-5 h-5" />
                                                         ) : (
                                                             <Cpu className="w-5 h-5" />
@@ -917,7 +931,8 @@ export default function App() {
                                                         className={`chat-bubble max-w-[85%] ${
                                                             msg.role === "user"
                                                                 ? "bubble-user"
-                                                                : msg.role === "error"
+                                                                : msg.role ===
+                                                                    "error"
                                                                   ? "bubble-error"
                                                                   : "bubble-assistant"
                                                         }`}
@@ -1010,21 +1025,26 @@ export default function App() {
                                                                     }) => {
                                                                         const match =
                                                                             /language-(\w+)/.exec(
-                                                                                className || "",
+                                                                                className ||
+                                                                                    "",
                                                                             );
                                                                         return match ? (
                                                                             <code
                                                                                 className="block bg-slate-900 text-emerald-200 p-3 rounded-xl text-xs font-mono my-3 overflow-x-auto"
                                                                                 {...props}
                                                                             >
-                                                                                {children}
+                                                                                {
+                                                                                    children
+                                                                                }
                                                                             </code>
                                                                         ) : (
                                                                             <code
                                                                                 className="bg-slate-900/80 text-emerald-200 px-1.5 py-0.5 rounded text-[12px] font-mono"
                                                                                 {...props}
                                                                             >
-                                                                                {children}
+                                                                                {
+                                                                                    children
+                                                                                }
                                                                             </code>
                                                                         );
                                                                     },
@@ -1037,15 +1057,16 @@ export default function App() {
                                                                             {...props}
                                                                         />
                                                                     ),
-                                                                    blockquote: ({
-                                                                        node,
-                                                                        ...props
-                                                                    }) => (
-                                                                        <blockquote
-                                                                            className="border-l-4 border-sky-200 pl-4 py-1 my-4 text-slate-700 italic bg-white/60 rounded-r"
-                                                                            {...props}
-                                                                        />
-                                                                    ),
+                                                                    blockquote:
+                                                                        ({
+                                                                            node,
+                                                                            ...props
+                                                                        }) => (
+                                                                            <blockquote
+                                                                                className="border-l-4 border-sky-200 pl-4 py-1 my-4 text-slate-700 italic bg-white/60 rounded-r"
+                                                                                {...props}
+                                                                            />
+                                                                        ),
                                                                 }}
                                                             >
                                                                 {msg.content}
@@ -1055,27 +1076,35 @@ export default function App() {
                                                 </div>
 
                                                 {msg.role === "assistant" &&
-                                                    (msg.script || msg.pythonOutput) && (
+                                                    (msg.script ||
+                                                        msg.pythonOutput) && (
                                                         <div className="ml-12 md:ml-14 max-w-[85%]">
                                                             <details className="group">
                                                                 <summary className="text-xs flex items-center gap-2 text-slate-500 hover:text-slate-700 cursor-pointer list-none select-none transition-colors">
                                                                     <Code className="w-3 h-3" />
                                                                     <span>
-                                                                        View Generated Script & Logs
+                                                                        View
+                                                                        Generated
+                                                                        Script &
+                                                                        Logs
                                                                     </span>
                                                                 </summary>
                                                                 <div className="mt-2 space-y-2">
                                                                     {msg.script && (
                                                                         <div className="log-card">
                                                                             <pre className="text-xs text-emerald-200 font-mono whitespace-pre-wrap">
-                                                                                {msg.script}
+                                                                                {
+                                                                                    msg.script
+                                                                                }
                                                                             </pre>
                                                                         </div>
                                                                     )}
                                                                     {msg.pythonOutput && (
                                                                         <div className="log-card">
                                                                             <pre className="text-xs text-amber-200 font-mono whitespace-pre-wrap">
-                                                                                {msg.pythonOutput}
+                                                                                {
+                                                                                    msg.pythonOutput
+                                                                                }
                                                                             </pre>
                                                                         </div>
                                                                     )}
@@ -1086,7 +1115,8 @@ export default function App() {
                                             </div>
                                         ))}
 
-                                        {processingStep !== ProcessingStep.IDLE && (
+                                        {processingStep !==
+                                            ProcessingStep.IDLE && (
                                             <div className="flex gap-3 ml-10 md:ml-12">
                                                 <div className="px-3 py-2 text-sm text-slate-500 italic flex items-center gap-2 bg-white/70 border border-white/80 rounded-full backdrop-blur">
                                                     <Loader2 className="w-4 h-4 animate-spin text-sky-600" />
@@ -1103,7 +1133,8 @@ export default function App() {
                                 <div className="input-shell p-4 md:p-5 rounded-2xl border border-white/80 bg-white/80 backdrop-blur shadow-[0_20px_60px_rgba(90,130,255,0.12)]">
                                     {messages.length > 0 ? (
                                         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                                            {processingStep !== ProcessingStep.IDLE ? (
+                                            {processingStep !==
+                                            ProcessingStep.IDLE ? (
                                                 <p className="text-xs text-slate-500 text-center animate-pulse">
                                                     Processando análise...
                                                 </p>
@@ -1122,12 +1153,15 @@ export default function App() {
                                             <input
                                                 type="text"
                                                 value={input}
-                                                onChange={(e) => setInput(e.target.value)}
+                                                onChange={(e) =>
+                                                    setInput(e.target.value)
+                                                }
                                                 onKeyDown={handleKeyDown}
                                                 placeholder="Digite o número da heurística..."
                                                 disabled={
                                                     !state.isPythonReady ||
-                                                    processingStep !== ProcessingStep.IDLE
+                                                    processingStep !==
+                                                        ProcessingStep.IDLE
                                                 }
                                                 className="w-full bg-white/80 border border-white/80 rounded-xl pl-4 pr-14 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 disabled:opacity-60 transition-all"
                                             />
@@ -1135,7 +1169,8 @@ export default function App() {
                                                 onClick={handleSendMessage}
                                                 disabled={
                                                     !input.trim() ||
-                                                    processingStep !== ProcessingStep.IDLE
+                                                    processingStep !==
+                                                        ProcessingStep.IDLE
                                                 }
                                                 className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-2 rounded-lg text-white bg-gradient-to-r from-sky-500 to-indigo-500 shadow-[0_10px_25px_rgba(79,130,255,0.35)] hover:shadow-[0_12px_30px_rgba(79,130,255,0.45)] transition-all disabled:opacity-40"
                                             >
