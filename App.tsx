@@ -855,7 +855,7 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                             </button>
 
                             {isProfileOpen && (
-                                <div className="absolute right-0 mt-3 w-72 bg-white border border-white/80 shadow-[0_20px_60px_rgba(90,120,200,0.18)] rounded-2xl p-4 flex items-center gap-4">
+                                <div className="absolute z-10 right-0 mt-3 w-72 bg-white border border-white/80 shadow-[0_20px_60px_rgba(90,120,200,0.18)] rounded-2xl p-4 flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-sky-500 to-indigo-600 text-white flex items-center justify-center text-base font-bold uppercase">
                                         {user.photoURL ? (
                                             <img
@@ -1114,8 +1114,8 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                 {/* --- CHAT TAB --- */}
                 {isChat && (
                     <div className="relative h-full overflow-hidden">
-                        <div className="relative z-10 max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12 h-full flex flex-col">
-                            <div className="chat-pane flex flex-col gap-6 h-full min-h-0">
+                        <div className="relative z-1 max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12 h-full flex flex-col">
+                            <div className="chat-pane flex flex-col h-full min-h-0">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <div className="flex items-center gap-3">
                                         <div className="icon-pill">
@@ -1141,37 +1141,91 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                                             )}
                                         </div>
                                     </div>
-                                    <div
+                                    {/* <div
                                         className={`inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full border border-white/70 bg-white/80 shadow-sm backdrop-blur ${statusTextClass}`}
                                     >
                                         <span
                                             className={`h-2 w-2 rounded-full animate-pulse ${statusDotClass}`}
                                         />
                                         <span>{statusLabel}</span>
-                                    </div>
+                                    </div> */}
                                 </div>
 
                                 {/* Messages */}
                                 <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                                     <div className="chat-feed flex-1 overflow-y-auto space-y-5 pr-1">
                                         {messages.length === 0 && (
-                                            <div className="text-center mt-10 md:mt-16 opacity-70 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                                                <div className="w-14 h-14 bg-white/70 rounded-full flex items-center justify-center mx-auto mb-3 border border-white/80 shadow-lg">
-                                                    <Terminal className="w-7 h-7 text-sky-600" />
+                                            <>
+                                                <div className="text-center mt-10 md:mt-16 opacity-70 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                                    <div className="w-14 h-14 bg-white/70 rounded-full flex items-center justify-center mx-auto mb-3 border border-white/80 shadow-lg">
+                                                        <Terminal className="w-7 h-7 text-sky-600" />
+                                                    </div>
+                                                    <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                                                        {state.selectedProject
+                                                            ? `Ask me anything about ${state.selectedProject.name}`
+                                                            : "Aguardando análise"}
+                                                    </h3>
+                                                    <p>
+                                                        Examples: If you type...
+                                                    </p>
                                                 </div>
-                                                <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                                                    {state.selectedProject
-                                                        ? `Analisando ${state.selectedProject.name}`
-                                                        : "Aguardando análise"}
-                                                </h3>
-                                                <p className="text-sm max-w-md mx-auto text-slate-600">
-                                                    Digite o número da
-                                                    heurística (ex: "3.1") para
-                                                    iniciar. Os dados foram
-                                                    carregados na memória do
-                                                    Python.
-                                                </p>
-                                            </div>
+                                                <div className=" max-w-lg mx-auto gap-6 flex flex-col">
+                                                    <ul className="list-[upper-roman] text-slate-500 mt-3 space-y-1">
+                                                        <li>
+                                                            <i className="font-bold">
+                                                                "3.12"
+                                                            </i>
+                                                            <br />↳ I will do a
+                                                            complete analysis of
+                                                            this heuristic.
+                                                        </li>
+                                                        <li>
+                                                            <i className="font-bold">
+                                                                "tolerance to
+                                                                typing errors"
+                                                            </i>
+                                                            <br />↳ I will find
+                                                            the heuristic number
+                                                            and do a complete
+                                                            analysis.
+                                                        </li>
+                                                    </ul>
+                                                    <p className="text-lg text-slate-600">
+                                                        👉 But you can still ask
+                                                        more complex questions,
+                                                        such as:
+                                                    </p>
+                                                    <ul className="list-[upper-roman] text-slate-500 mt-3 space-y-1">
+                                                        <li>
+                                                            <i className="font-bold">
+                                                                "considering
+                                                                only apps, which
+                                                                players have
+                                                                voice search?"
+                                                            </i>
+                                                            <br />↳ I will find
+                                                            the heuristic for
+                                                            this topic, analyze
+                                                            the success
+                                                            criteria, and filter
+                                                            the players in the
+                                                            "App" journey.
+                                                        </li>
+                                                        <li>
+                                                            <i className="font-bold">
+                                                                "players who
+                                                                were able to
+                                                                identify an
+                                                                invalid number"
+                                                            </i>
+                                                            <br />↳ I will try
+                                                            to find the answer
+                                                            in all evaluator's
+                                                            comments
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </>
                                         )}
 
                                         {messages.map((msg) => (
@@ -1408,10 +1462,10 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                                 </div>
 
                                 {/* Input Area */}
-                                <div className="input-shell p-4 md:p-5 rounded-2xl border border-white/80 bg-white/80 backdrop-blur shadow-[0_20px_60px_rgba(90,130,255,0.12)]">
+                                <div className="input-shell p-4 md:p-5 rounded-2xl border border-white/80 mb-10">
                                     {messages.length > 0 ? (
-                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                                            {processingStep !==
+                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 ">
+                                            {/* {processingStep !==
                                             ProcessingStep.IDLE ? (
                                                 <p className="text-xs text-slate-500 text-center animate-pulse">
                                                     Processando análise...
@@ -1419,9 +1473,20 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                                             ) : (
                                                 <button
                                                     onClick={handleResetSession}
-                                                    className="flex items-center gap-2 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 text-white px-5 py-2.5 rounded-full font-semibold transition-all shadow-[0_12px_30px_rgba(80,120,255,0.35)] hover:shadow-[0_14px_36px_rgba(80,120,255,0.45)]"
+                                                    className="flex cursor-pointer text-lg mx-auto items-center gap-2 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 text-white px-5 py-3 px-6 rounded-full font-semibold transition-all shadow-[0_12px_30px_rgba(80,120,255,0.35)] hover:shadow-[0_14px_36px_rgba(80,120,255,0.45)]"
                                                 >
-                                                    <Sparkles className="w-4 h-4" />
+                                                    <Sparkles className="w-5 h-5" />
+                                                    Iniciar Nova Análise
+                                                </button>
+                                            )} */}
+
+                                            {processingStep ===
+                                                ProcessingStep.IDLE && (
+                                                <button
+                                                    onClick={handleResetSession}
+                                                    className="flex cursor-pointer text-lg mx-auto items-center gap-2 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 text-white px-5 py-3 px-6 rounded-full font-semibold transition-all shadow-[0_12px_30px_rgba(80,120,255,0.35)] hover:shadow-[0_14px_36px_rgba(80,120,255,0.45)]"
+                                                >
+                                                    <Sparkles className="w-5 h-5" />
                                                     Iniciar Nova Análise
                                                 </button>
                                             )}
@@ -1441,9 +1506,9 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                                                     processingStep !==
                                                         ProcessingStep.IDLE
                                                 }
-                                                className="w-full bg-white/80 border border-white/80 rounded-xl pl-4 pr-14 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 disabled:opacity-60 transition-all"
+                                                className="w-full bg-white/80 border border-slate-300 rounded-xl pl-4 pr-14 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 disabled:opacity-60 transition-all"
                                             />
-                                            <button
+                                            {/* <button
                                                 onClick={handleSendMessage}
                                                 disabled={
                                                     !input.trim() ||
@@ -1453,7 +1518,7 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                                                 className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-2 rounded-lg text-white bg-gradient-to-r from-sky-500 to-indigo-500 shadow-[0_10px_25px_rgba(79,130,255,0.35)] hover:shadow-[0_12px_30px_rgba(79,130,255,0.45)] transition-all disabled:opacity-40"
                                             >
                                                 <Play className="w-5 h-5" />
-                                            </button>
+                                            </button> */}
                                         </div>
                                     )}
                                 </div>
