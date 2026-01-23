@@ -1,5 +1,11 @@
 import { Project } from "./projects";
 
+export interface AuthUser {
+  email: string;
+  name?: string;
+  photoURL?: string;
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system' | 'error';

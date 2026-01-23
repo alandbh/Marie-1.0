@@ -1,10 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { signInWithPopup, signOut } from "firebase/auth";
 import { GeminiService } from "./services/geminiService";
 import { OllamaService } from "./services/ollamaService";
-import { StorageService } from "./services/storageService";
+import {
+    getFirebaseAuth,
+    googleProvider,
+    hasFirebaseConfig,
+} from "./services/firebaseClient";
 import MarieFace from "./assets/marie-face2.svg";
-import { Message, AppState, ProcessingStep } from "./types";
+import { AuthUser, Message, AppState, ProcessingStep } from "./types";
 import { projects, Project } from "./projects";
 import {
     User,
@@ -32,6 +37,8 @@ import {
     Loader2,
     ArrowLeft,
     XCircle,
+    LogIn,
+    LogOut,
 } from "lucide-react";
 
 // Declare global Pyodide
@@ -94,12 +101,13 @@ const getInitialModelProvider = (): ModelProvider => {
 };
 
 export default function App() {
-    const [apiKey, setApiKey] = useState(getEnvApiKey());
     const [apiUrl, setApiUrl] = useState("");
-    const [resultsApiKey, setResultsApiKey] = useState("");
     const [modelProvider, setModelProvider] = useState<ModelProvider>(
         getInitialModelProvider,
     );
+    const [user, setUser] = useState<AuthUser | null>(null);
+    const [authError, setAuthError] = useState<string | null>(null);
+    const [isSigningIn, setIsSigningIn] = useState(false);
 
     // FIX: Initialize GeminiService immediately if API key exists in environment
     const [gemini, setGemini] = useState<GeminiService | null>(() => {
@@ -151,6 +159,32 @@ export default function App() {
             : "bg-neutral-950 border-neutral-800 text-white";
     const headerSubtleText =
         isHome || isChat ? "text-slate-500" : "text-neutral-500";
+
+    const normalizeEmail = (email?: string | null) =>
+        (email || "").trim().toLowerCase();
+    const isInternalEmail = (email: string) => email.endsWith("@rga.com");
+    const projectsAllowedForUser = useMemo(
+        () => {
+            const normalized = normalizeEmail(user?.email);
+            if (!normalized) return [];
+            if (isInternalEmail(normalized)) return projects;
+            return projects.filter((proj) =>
+                (proj.allowedUsers || []).some(
+                    (allowed) => normalizeEmail(allowed) === normalized,
+                ),
+            );
+        },
+        [user],
+    );
+
+    const userCanAccessProject = (project: Project) => {
+        const normalized = normalizeEmail(user?.email);
+        if (!normalized) return false;
+        if (isInternalEmail(normalized)) return true;
+        return (project.allowedUsers || []).some(
+            (allowed) => normalizeEmail(allowed) === normalized,
+        );
+    };
 
     // 1. Initialize Pyodide with Robust Polling
     useEffect(() => {
@@ -230,10 +264,89 @@ export default function App() {
         });
     }, [messages, processingStep]);
 
-    const handleSetApiKey = () => {
-        if (apiKey.trim().length > 0) {
-            setGemini(new GeminiService(apiKey));
-            setState((s) => ({ ...s, hasApiKey: true }));
+    const handleGoogleSignIn = async () => {
+        setAuthError(null);
+
+        if (!hasFirebaseConfig) {
+            setAuthError(
+                "Firebase Auth não configurado. Defina VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID e VITE_FIREBASE_APP_ID.",
+            );
+            return;
+        }
+
+        const auth = getFirebaseAuth();
+        if (!auth) {
+            setAuthError(
+                "Não foi possível iniciar o Firebase Auth. Verifique as credenciais.",
+            );
+            return;
+        }
+
+        setIsSigningIn(true);
+        try {
+            const result = await signInWithPopup(auth, googleProvider);
+            const email = result.user.email;
+
+            if (!email) {
+                throw new Error(
+                    "Não conseguimos ler seu email do Google. Tente novamente.",
+                );
+            }
+
+            const normalized = normalizeEmail(email);
+            const allowedList = isInternalEmail(normalized)
+                ? projects
+                : projects.filter((proj) =>
+                      (proj.allowedUsers || []).some(
+                          (allowed) => normalizeEmail(allowed) === normalized,
+                      ),
+                  );
+
+            if (allowedList.length === 0) {
+                setAuthError(
+                    "Acesso restrito a contas @rga.com. Peça para ser incluído em allowedUsers em projects.ts.",
+                );
+                await signOut(auth);
+                return;
+            }
+
+            setUser({
+                email: normalized,
+                name: result.user.displayName || undefined,
+                photoURL: result.user.photoURL || undefined,
+            });
+            setState((s) => ({ ...s, activeTab: "home" }));
+        } catch (error: any) {
+            console.error("Google Sign-In error", error);
+            const message =
+                error?.message ||
+                "Erro ao autenticar com o Google. Tente novamente.";
+            setAuthError(message);
+        } finally {
+            setIsSigningIn(false);
+        }
+    };
+
+    const handleSignOut = async () => {
+        try {
+            const auth = getFirebaseAuth();
+            if (auth) {
+                await signOut(auth);
+            }
+        } catch (e) {
+            console.error("Erro ao sair do Firebase", e);
+        } finally {
+            setUser(null);
+            setAuthError(null);
+            setState((s) => ({
+                ...s,
+                activeTab: "home",
+                selectedProject: null,
+                heuristicasContent: null,
+                resultadosContent: null,
+            }));
+            setMessages([]);
+            setInput("");
         }
     };
 
@@ -282,6 +395,21 @@ export default function App() {
     };
 
     const handleSelectProject = (project: Project) => {
+        setAuthError(null);
+        if (!user) {
+            setAuthError(
+                "Faça login com sua conta Google para acessar os projetos.",
+            );
+            return;
+        }
+
+        if (!userCanAccessProject(project)) {
+            setAuthError(
+                "Seu email não tem permissão para este projeto. Peça para ser incluído em allowedUsers.",
+            );
+            return;
+        }
+
         loadProjectData(project);
     };
 
@@ -330,9 +458,7 @@ export default function App() {
     const fetchResultsLegacy = async () => {
         if (!apiUrl.trim()) return;
         try {
-            const headers: HeadersInit = {};
-            if (resultsApiKey.trim()) headers["api_key"] = resultsApiKey;
-            const res = await fetch(apiUrl, { headers });
+            const res = await fetch(apiUrl);
             if (!res.ok) throw new Error(`Status: ${res.status}`);
             const data = await res.json();
             setState((s) => ({ ...s, resultadosContent: data }));
@@ -353,10 +479,14 @@ export default function App() {
 
     const handleSendMessage = async () => {
         if (!input.trim()) return;
+        if (!user) {
+            alert("Faça login com sua conta Google para conversar com a Marie.");
+            return;
+        }
         const activeService = modelProvider === "gemini" ? gemini : ollama;
         if (!activeService) {
             alert(
-                "Erro: Serviço de IA não inicializado. Informe a API Key do Gemini ou selecione o modelo Ollama/Gemma.",
+                "Erro: Serviço de IA não inicializado. Configure a API Key do Gemini nas variáveis de ambiente ou selecione o modelo Ollama/Gemma.",
             );
             return;
         }
@@ -460,58 +590,97 @@ export default function App() {
         }
     };
 
-    if (modelProvider === "gemini" && !state.hasApiKey) {
+    if (!user) {
         return (
-            <div className="min-h-screen bg-slate-200 text-white flex items-center justify-center p-4">
-                <div className="max-w-md w-full bg-neutral-900 border border-neutral-800 p-8 rounded-xl shadow-2xl">
-                    <div className="mb-4">
-                        <label className="text-xs uppercase tracking-wide text-neutral-500">
-                            Selecionar modelo
-                        </label>
-                        <div className="mt-2">
-                            <select
-                                value={modelProvider}
-                                onChange={(e) =>
-                                    setModelProvider(
-                                        e.target.value as ModelProvider,
-                                    )
-                                }
-                                className="w-full bg-neutral-950 border border-neutral-700 rounded p-3 text-white text-sm focus:outline-none focus:border-red-600"
+            <div className="relative min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 text-slate-900 overflow-hidden">
+                <div className="pointer-events-none absolute inset-0">
+                    <div className="absolute -left-10 -top-24 w-[480px] h-[480px] bg-sky-200/40 rounded-full blur-[120px]" />
+                    <div className="absolute -right-16  top-10 w-[420px] h-[420px] bg-indigo-200/40 rounded-full blur-[120px]" />
+                    <div className="absolute left-10 bottom-0 w-[520px] h-[520px] bg-blue-100/35 rounded-full blur-[120px]" />
+                </div>
+
+                <div className="relative z-10 max-w-5xl mx-auto px-6 py-16 md:py-20 flex flex-col items-center text-center gap-8">
+                    <div className="bg-white shadow-[0_20px_60px_rgba(66,100,255,0.16)] border border-white/80 rounded-[32px] px-8 py-10 md:px-12 md:py-12 w-full max-w-3xl">
+                        <div className="flex flex-col items-center gap-6">
+                            <div className="relative inline-flex items-center justify-center">
+                                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-sky-100 to-indigo-100 border border-white shadow-inner flex items-center justify-center">
+                                    <img
+                                        src={MarieFace}
+                                        alt="Marie"
+                                        className="w-16 h-16"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <h1 className="text-4xl md:text-5xl font-black leading-tight">
+                                    Welcome aboard!
+                                </h1>
+                                <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto">
+                                    To enter our amazing lab, please first
+                                    identify yourself. Just a reminder that only
+                                    R/GA scientists are authorized.
+                                </p>
+                            </div>
+                        </div>
+
+                        {authError && (
+                            <div className="mt-6 text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-left">
+                                {authError}
+                            </div>
+                        )}
+
+                        {!hasFirebaseConfig && (
+                            <div className="mt-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-left">
+                                Configure o Firebase para habilitar o botão:
+                                defina VITE_FIREBASE_API_KEY,
+                                VITE_FIREBASE_AUTH_DOMAIN,
+                                VITE_FIREBASE_PROJECT_ID e
+                                VITE_FIREBASE_APP_ID no painel da Vercel.
+                            </div>
+                        )}
+
+                        <div className="mt-8 flex flex-col gap-3">
+                            <button
+                                onClick={handleGoogleSignIn}
+                                disabled={isSigningIn || !hasFirebaseConfig}
+                                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-600 text-white font-semibold py-3 shadow-[0_18px_40px_rgba(66,112,255,0.35)] hover:shadow-[0_20px_50px_rgba(66,112,255,0.42)] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                {MODEL_OPTIONS.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                        className="bg-neutral-950"
-                                    >
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
+                                {isSigningIn ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <LogIn className="w-5 h-5" />
+                                )}
+                                Entrar com Google
+                            </button>
+                            <p className="text-xs text-slate-500">
+                                Contas @rga.com são liberadas automaticamente.
+                                Outros domínios precisam estar listados em
+                                allowedUsers no arquivo projects.ts.
+                            </p>
                         </div>
                     </div>
+                </div>
+            </div>
+        );
+    }
 
-                    <div className="flex justify-center mb-6">
-                        <ShieldAlert className="w-16 h-16 text-red-600" />
-                    </div>
-                    <h1 className="text-2xl font-bold text-center mb-2">
-                        R/GA UX Benchmark
-                    </h1>
-                    <p className="text-neutral-400 text-center mb-6 text-sm">
-                        System requires authentication.
+    if (projectsAllowedForUser.length === 0) {
+        return (
+            <div className="min-h-screen bg-slate-100 text-slate-800 flex items-center justify-center px-6">
+                <div className="max-w-lg w-full bg-white rounded-2xl border border-slate-200 shadow-[0_20px_60px_rgba(80,110,150,0.18)] p-8 space-y-4 text-center">
+                    <ShieldAlert className="w-12 h-12 text-amber-500 mx-auto" />
+                    <h2 className="text-2xl font-bold">Acesso não liberado</h2>
+                    <p className="text-sm text-slate-600">
+                        Seu email não faz parte do domínio @rga.com e não foi
+                        encontrado em allowedUsers. Peça para o responsável
+                        adicionar seu endereço no arquivo projects.ts.
                     </p>
-                    <input
-                        type="password"
-                        placeholder="Enter App API Key"
-                        className="w-full bg-neutral-950 border border-neutral-700 rounded p-3 text-white mb-4 focus:outline-none focus:border-red-600"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                    />
                     <button
-                        onClick={handleSetApiKey}
-                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded transition-colors"
+                        onClick={handleSignOut}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors"
                     >
-                        Authenticate
+                        <LogOut className="w-4 h-4" />
+                        Trocar de conta
                     </button>
                 </div>
             </div>
@@ -621,6 +790,47 @@ export default function App() {
                         </select>
                     </div>
 
+                    {user && (
+                        <div
+                            className={`flex items-center gap-3 px-3 py-2 rounded-full border ${
+                                isHome || isChat
+                                    ? "bg-white/80 border-white/80 text-slate-800 shadow-sm"
+                                    : "bg-neutral-900 border-neutral-800 text-white"
+                            }`}
+                        >
+                            <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-sky-500 to-indigo-600 text-white flex items-center justify-center text-sm font-bold uppercase">
+                                {user.photoURL ? (
+                                    <img
+                                        src={user.photoURL}
+                                        alt={user.name || user.email}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    (user.name || user.email).charAt(0)
+                                )}
+                            </div>
+                            <div className="leading-tight">
+                                <p className="text-[11px] uppercase tracking-wide opacity-70">
+                                    Conectado
+                                </p>
+                                <p className="text-sm font-semibold max-w-[180px] truncate">
+                                    {user.name || user.email}
+                                </p>
+                                <p className="text-xs opacity-70 max-w-[180px] truncate">
+                                    {user.email}
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleSignOut}
+                                className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+                                title="Sair"
+                            >
+                                <LogOut className="w-3 h-3" />
+                                Sair
+                            </button>
+                        </div>
+                    )}
+
                     {/* Project Indicator / Back Button */}
                     {state.activeTab === "chat" && state.selectedProject && (
                         <div className="flex items-center gap-4">
@@ -715,10 +925,19 @@ export default function App() {
                                 )}
                             </div>
 
+                            {authError && (
+                                <div className="mt-4 inline-flex items-start gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 max-w-xl mx-auto text-left">
+                                    <AlertTriangle className="w-4 h-4 mt-0.5" />
+                                    <span>{authError}</span>
+                                </div>
+                            )}
+
                             <div className="grid md:grid-cols-2 gap-6 w-full max-w-4xl">
                                 {!state.isPythonReady
                                     ? Array.from({
-                                          length: projects.length || 4,
+                                          length:
+                                              projectsAllowedForUser.length ||
+                                              4,
                                       }).map((_, idx) => (
                                           <div
                                               key={idx}
@@ -735,7 +954,7 @@ export default function App() {
                                               </div>
                                           </div>
                                       ))
-                                    : projects.map((proj) => (
+                                    : projectsAllowedForUser.map((proj) => (
                                           <button
                                               key={proj.slug}
                                               onClick={() =>

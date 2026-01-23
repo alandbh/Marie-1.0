@@ -13,6 +13,7 @@ export interface Project {
         url: string;
         api_key: string;
     };
+    allowedUsers?: string[];
 }
 
 // Função auxiliar para ler variáveis de ambiente de forma híbrida (Vite ou Node)
@@ -57,6 +58,7 @@ export const projects: Project[] = [
             url: `${BASE_API_URL}/api/heuristics?project=retail6`,
             api_key: SHARED_API_KEY,
         },
+        allowedUsers: ["alanfuncionario@gmail.com"],
     },
     {
         slug: "rspla2",
