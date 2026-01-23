@@ -77,7 +77,9 @@ Lembrete: responda somente com código Python executável, sem markdown ou texto
             return script;
         } catch (error) {
             console.error("Error generating script:", error);
-            throw new Error("Failed to generate analysis script.");
+            throw new Error(
+                "Are you sure that this question has anything to do with this study? Seriously?",
+            );
         }
     }
 
