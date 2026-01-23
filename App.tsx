@@ -9,6 +9,7 @@ import {
     hasFirebaseConfig,
 } from "./services/firebaseClient";
 import MarieFace from "./assets/marie-face2.svg";
+import MarieAvatar from "./assets/marie-avatar.svg";
 import { AuthUser, Message, AppState, ProcessingStep } from "./types";
 import { projects, Project } from "./projects";
 import {
@@ -41,6 +42,7 @@ import {
     LogIn,
     LogOut,
 } from "lucide-react";
+import { space } from "postcss/lib/list";
 
 // Declare global Pyodide
 declare global {
@@ -1123,7 +1125,7 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                         <div className="relative z-1 max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12 h-full flex flex-col">
                             <div className="chat-pane flex flex-col h-full min-h-0">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
-                                    <div className="flex items-center gap-3">
+                                    {/* <div className="flex items-center gap-3">
                                         <div className="icon-pill">
                                             <BarChart3 className="w-4 h-4" />
                                         </div>
@@ -1146,7 +1148,7 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                                                 </p>
                                             )}
                                         </div>
-                                    </div>
+                                    </div> */}
                                     {/* <div
                                         className={`inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full border border-white/70 bg-white/80 shadow-sm backdrop-blur ${statusTextClass}`}
                                     >
@@ -1162,30 +1164,62 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                                     <div className="chat-feed flex-1 overflow-y-auto space-y-5 pr-1">
                                         {messages.length === 0 && (
                                             <>
-                                                <div className="text-center mt-10 md:mt-16 opacity-70 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                                                    <div className="w-14 h-14 bg-white/70 rounded-full flex items-center justify-center mx-auto mb-3 border border-white/80 shadow-lg">
-                                                        <Terminal className="w-7 h-7 text-sky-600" />
+                                                <div className="text-center mt-4 md:mt-4 opacity-70 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                                    <div className="w-22 h-22 bg-white/70 rounded-full flex items-center justify-center mx-auto mb-3 border border-white/80 shadow-lg">
+                                                        {/* <Terminal className="w-7 h-7 text-sky-600" /> */}
+                                                        <img
+                                                            src={MarieAvatar}
+                                                            alt="Marie"
+                                                            className="w-20 h-20"
+                                                        />
                                                     </div>
-                                                    <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                                                        {state.selectedProject
+                                                    <h3 className="text-2xl font-semibold text-slate-800 mb-2">
+                                                        {state.selectedProject && (
+                                                            <span>
+                                                                Ask me{" "}
+                                                                <i className="font-serif text-3xl">
+                                                                    anything
+                                                                </i>{" "}
+                                                                about{" "}
+                                                                {
+                                                                    state
+                                                                        .selectedProject
+                                                                        .name
+                                                                }
+                                                            </span>
+                                                        )}
+                                                        {/* {state.selectedProject
                                                             ? `Ask me anything about ${state.selectedProject.name}`
-                                                            : "Aguardando análise"}
+                                                            : "Aguardando análise"} */}
                                                     </h3>
-                                                    <p>
-                                                        Examples: If you type...
+                                                    <p className="text-lg text-slate-600 mb-6">
+                                                        In{" "}
+                                                        <i className="font-serif text-xl">
+                                                            any
+                                                        </i>{" "}
+                                                        language, mon chéri. 💅
                                                     </p>
                                                 </div>
-                                                <div className=" max-w-lg mx-auto gap-6 flex flex-col">
-                                                    <ul className="list-[upper-roman] text-slate-500 mt-3 space-y-1">
+                                                <div className=" max-w-2xl mx-auto gap-3 flex flex-col mt-12">
+                                                    <p className="text-lg text-slate-600 font-bold">
+                                                        👉 For example, if you
+                                                        type...
+                                                    </p>
+                                                    <ul className="list-disc text-slate-500 space-y-1 ml-4 mb-8 flex flex-col gap-3">
                                                         <li>
+                                                            Just the heuristic
+                                                            number, like:{" "}
                                                             <i className="font-bold">
                                                                 "3.12"
                                                             </i>
                                                             <br />↳ I will do a
                                                             complete analysis of
-                                                            this heuristic.
+                                                            the results of this
+                                                            heuristic.
                                                         </li>
                                                         <li>
+                                                            Or the "theme" of a
+                                                            heuristic, like:{" "}
                                                             <i className="font-bold">
                                                                 "tolerance to
                                                                 typing errors"
@@ -1196,12 +1230,12 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                                                             analysis.
                                                         </li>
                                                     </ul>
-                                                    <p className="text-lg text-slate-600">
-                                                        👉 But you can still ask
+                                                    <p className="text-lg text-slate-600 font-bold">
+                                                        👉 But you can also ask
                                                         more complex questions,
                                                         such as:
                                                     </p>
-                                                    <ul className="list-[upper-roman] text-slate-500 mt-3 space-y-1">
+                                                    <ul className="list-disc text-slate-500 space-y-1 ml-8 flex flex-col gap-3">
                                                         <li>
                                                             <i className="font-bold">
                                                                 "considering
@@ -1214,8 +1248,8 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                                                             this topic, analyze
                                                             the success
                                                             criteria, and filter
-                                                            the players in the
-                                                            "App" journey.
+                                                            only the players in
+                                                            the "App" journey.
                                                         </li>
                                                         <li>
                                                             <i className="font-bold">
@@ -1506,13 +1540,13 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                                                     setInput(e.target.value)
                                                 }
                                                 onKeyDown={handleKeyDown}
-                                                placeholder="Digite o número da heurística..."
+                                                placeholder="Type the heuristic number or your question here..."
                                                 disabled={
                                                     !state.isPythonReady ||
                                                     processingStep !==
                                                         ProcessingStep.IDLE
                                                 }
-                                                className="w-full bg-white/80 border border-slate-300 rounded-xl pl-4 pr-14 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 disabled:opacity-60 transition-all"
+                                                className="w-full bg-white border border-slate-300 rounded-xl pl-4 pr-14 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 disabled:opacity-60 transition-all"
                                             />
                                             {/* <button
                                                 onClick={handleSendMessage}
