@@ -32,6 +32,7 @@ import {
     RefreshCw,
     Sparkles,
     ChevronRight,
+    ChevronDown,
     BarChart3,
     Clock,
     Loader2,
@@ -135,9 +136,11 @@ export default function App() {
     const [pyodide, setPyodide] = useState<any>(null);
     const [debugOutput, setDebugOutput] = useState<string>("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const profileRef = useRef<HTMLDivElement>(null);
 
     // UI State for Exit Confirmation
     const [exitConfirm, setExitConfirm] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const isHome = state.activeTab === "home";
     const isChat = state.activeTab === "chat";
     const pythonReady = state.isPythonReady;
@@ -155,7 +158,7 @@ export default function App() {
           : "bg-slate-200 text-slate-800";
     const headerTheme =
         isHome || isChat
-            ? "bg-white/80 border-white/60 text-slate-800 shadow-[0_10px_50px_rgba(80,120,255,0.08)]"
+            ? "bg-transparent border-transparent text-slate-800"
             : "bg-neutral-950 border-neutral-800 text-white";
     const headerSubtleText =
         isHome || isChat ? "text-slate-500" : "text-neutral-500";
@@ -214,6 +217,21 @@ export default function App() {
             isMounted = false;
         };
     }, [pyodide]);
+
+    // Close profile popover on outside click
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (
+                isProfileOpen &&
+                profileRef.current &&
+                !profileRef.current.contains(e.target as Node)
+            ) {
+                setIsProfileOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isProfileOpen]);
 
     useEffect(() => {
         try {
@@ -338,6 +356,7 @@ export default function App() {
         } finally {
             setUser(null);
             setAuthError(null);
+            setIsProfileOpen(false);
             setState((s) => ({
                 ...s,
                 activeTab: "home",
@@ -747,7 +766,7 @@ export default function App() {
             )}
             {/* Header */}
             <header
-                className={`flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b backdrop-blur z-10 ${headerTheme}`}
+                className={`flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b backdrop-blur-sm z-10 ${headerTheme}`}
             >
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-500 rounded-lg flex items-center justify-center font-bold text-white shadow-[0_10px_30px_rgba(90,140,255,0.35)]">
@@ -791,43 +810,60 @@ export default function App() {
                     </div>
 
                     {user && (
-                        <div
-                            className={`flex items-center gap-3 px-3 py-2 rounded-full border ${
-                                isHome || isChat
-                                    ? "bg-white/80 border-white/80 text-slate-800 shadow-sm"
-                                    : "bg-neutral-900 border-neutral-800 text-white"
-                            }`}
-                        >
-                            <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-sky-500 to-indigo-600 text-white flex items-center justify-center text-sm font-bold uppercase">
-                                {user.photoURL ? (
-                                    <img
-                                        src={user.photoURL}
-                                        alt={user.name || user.email}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    (user.name || user.email).charAt(0)
-                                )}
-                            </div>
-                            <div className="leading-tight">
-                                <p className="text-[11px] uppercase tracking-wide opacity-70">
-                                    Conectado
-                                </p>
-                                <p className="text-sm font-semibold max-w-[180px] truncate">
-                                    {user.name || user.email}
-                                </p>
-                                <p className="text-xs opacity-70 max-w-[180px] truncate">
-                                    {user.email}
-                                </p>
-                            </div>
+                        <div className="relative" ref={profileRef}>
                             <button
-                                onClick={handleSignOut}
-                                className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors"
-                                title="Sair"
+                                onClick={() => setIsProfileOpen((s) => !s)}
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-full bg-white/70 border border-white/80 shadow-sm backdrop-blur hover:bg-white transition-all"
                             >
-                                <LogOut className="w-3 h-3" />
-                                Sair
+                                <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-sky-500 to-indigo-600 text-white flex items-center justify-center text-sm font-bold uppercase">
+                                    {user.photoURL ? (
+                                        <img
+                                            src={user.photoURL}
+                                            alt={user.name || user.email}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        (user.name || user.email).charAt(0)
+                                    )}
+                                </div>
+                                <ChevronDown
+                                    className={`w-4 h-4 text-slate-600 transition-transform ${isProfileOpen ? "rotate-180" : ""}`}
+                                />
                             </button>
+
+                            {isProfileOpen && (
+                                <div className="absolute right-0 mt-3 w-72 bg-white border border-white/80 shadow-[0_20px_60px_rgba(90,120,200,0.18)] rounded-2xl p-4 flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-sky-500 to-indigo-600 text-white flex items-center justify-center text-base font-bold uppercase">
+                                        {user.photoURL ? (
+                                            <img
+                                                src={user.photoURL}
+                                                alt={user.name || user.email}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            (user.name || user.email).charAt(0)
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                                            Conectado
+                                        </p>
+                                        <p className="text-sm font-semibold text-slate-900">
+                                            {user.name || user.email}
+                                        </p>
+                                        <p className="text-xs text-slate-500">
+                                            {user.email}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={handleSignOut}
+                                        className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+                                    >
+                                        <LogOut className="w-3 h-3" />
+                                        Logout
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
 
