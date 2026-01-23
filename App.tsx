@@ -69,9 +69,16 @@ const getEnvApiKey = () => {
         if (
             typeof import.meta !== "undefined" &&
             import.meta.env &&
-            import.meta.env.VITE_API_KEY
+            (import.meta.env as any).VITE_GEMINI_API_KEY
         ) {
-            return import.meta.env.VITE_API_KEY;
+            return (import.meta.env as any).VITE_GEMINI_API_KEY as string;
+        }
+        if (
+            typeof import.meta !== "undefined" &&
+            import.meta.env &&
+            (import.meta.env as any).VITE_API_KEY
+        ) {
+            return (import.meta.env as any).VITE_API_KEY as string;
         }
     } catch (e) {}
 
@@ -79,9 +86,13 @@ const getEnvApiKey = () => {
         if (
             typeof process !== "undefined" &&
             process.env &&
-            process.env.API_KEY
+            (process.env.GEMINI_API_KEY || process.env.API_KEY)
         ) {
-            return process.env.API_KEY;
+            return (
+                process.env.GEMINI_API_KEY ||
+                process.env.API_KEY ||
+                ""
+            ) as string;
         }
     } catch (e) {}
 
@@ -184,6 +195,18 @@ export default function App() {
         return (project.allowedUsers || []).some(
             (allowed) => normalizeEmail(allowed) === normalized,
         );
+    };
+
+    const ensureGeminiService = () => {
+        if (gemini) return gemini;
+        const key = getEnvApiKey();
+        if (key) {
+            const svc = new GeminiService(key);
+            setGemini(svc);
+            setState((s) => ({ ...s, hasApiKey: true }));
+            return svc;
+        }
+        return null;
     };
 
     // 1. Initialize Pyodide with Robust Polling
@@ -503,10 +526,11 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
             );
             return;
         }
-        const activeService = modelProvider === "gemini" ? gemini : ollama;
+        const activeService =
+            modelProvider === "gemini" ? ensureGeminiService() : ollama;
         if (!activeService) {
             alert(
-                "Erro: Serviço de IA não inicializado. Configure a API Key do Gemini nas variáveis de ambiente ou selecione o modelo Ollama/Gemma.",
+                "Erro: Serviço de IA não inicializado. Defina VITE_GEMINI_API_KEY (ou GEMINI_API_KEY) nas variáveis de ambiente da Vercel.",
             );
             return;
         }
