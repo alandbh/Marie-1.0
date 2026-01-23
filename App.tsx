@@ -88,11 +88,9 @@ const getEnvApiKey = () => {
             process.env &&
             (process.env.GEMINI_API_KEY || process.env.API_KEY)
         ) {
-            return (
-                process.env.GEMINI_API_KEY ||
+            return (process.env.GEMINI_API_KEY ||
                 process.env.API_KEY ||
-                ""
-            ) as string;
+                "") as string;
         }
     } catch (e) {}
 
@@ -647,22 +645,25 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                     <div className="bg-white shadow-[0_20px_60px_rgba(66,100,255,0.16)] border border-white/80 rounded-[32px] px-8 py-10 md:px-12 md:py-12 w-full max-w-3xl">
                         <div className="flex flex-col items-center gap-6">
                             <div className="relative inline-flex items-center justify-center">
-                                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-sky-100 to-indigo-100 border border-white shadow-inner flex items-center justify-center">
+                                <div className="w-24 h-24 rounded-full flex items-center justify-center animate-bounce-slow">
                                     <img
                                         src={MarieFace}
                                         alt="Marie"
-                                        className="w-16 h-16"
+                                        className="w-20 h-20"
                                     />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <h1 className="text-4xl md:text-5xl font-black leading-tight">
+                                <h1 className="text-4xl md:text-5xl font-black leading-tight text-transparent bg-clip-text bg-linear-to-r from-red-500 via-green-500 via to-blue-500">
                                     Welcome aboard!
                                 </h1>
                                 <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto">
                                     To enter our amazing lab, please first
-                                    identify yourself. Just a reminder that only
-                                    R/GA scientists are authorized.
+                                    identify yourself.
+                                </p>
+                                <p className="text-base text-slate-400 max-w-2xl mx-auto mt-2">
+                                    Just a reminder that only R/GA scientists
+                                    are authorized. ;)
                                 </p>
                             </div>
                         </div>
@@ -683,7 +684,7 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                             </div>
                         )}
 
-                        <div className="mt-8 flex flex-col gap-3">
+                        <div className="mt-16 flex flex-col gap-6">
                             <button
                                 onClick={handleGoogleSignIn}
                                 disabled={isSigningIn || !hasFirebaseConfig}
@@ -697,9 +698,9 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
                                 Entrar com Google
                             </button>
                             <p className="text-xs text-slate-500">
-                                Contas @rga.com são liberadas automaticamente.
-                                Outros domínios precisam estar listados em
-                                allowedUsers no arquivo projects.ts.
+                                Accounts using the domain @rga.com are
+                                automatically approved. <br /> Other domains
+                                need to be authorized by the R/GA team.
                             </p>
                         </div>
                     </div>
