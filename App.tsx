@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { signInWithPopup, signOut } from "firebase/auth";
+import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { GeminiService } from "./services/geminiService";
 import { OllamaService } from "./services/ollamaService";
 import {
@@ -119,6 +119,7 @@ export default function App() {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [authError, setAuthError] = useState<string | null>(null);
     const [isSigningIn, setIsSigningIn] = useState(false);
+    const [authInitialized, setAuthInitialized] = useState(false);
 
     // FIX: Initialize GeminiService immediately if API key exists in environment
     const [gemini, setGemini] = useState<GeminiService | null>(() => {
@@ -252,6 +253,38 @@ export default function App() {
         return () =>
             document.removeEventListener("mousedown", handleClickOutside);
     }, [isProfileOpen]);
+
+    // Restore auth session on refresh
+    useEffect(() => {
+        if (!hasFirebaseConfig) {
+            setAuthInitialized(true);
+            return;
+        }
+
+        const auth = getFirebaseAuth();
+        if (!auth) {
+            setAuthInitialized(true);
+            return;
+        }
+
+        const normalize = (email?: string | null) =>
+            (email || "").trim().toLowerCase();
+
+        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+            if (firebaseUser?.email) {
+                setUser({
+                    email: normalize(firebaseUser.email),
+                    name: firebaseUser.displayName || undefined,
+                    photoURL: firebaseUser.photoURL || undefined,
+                });
+            } else {
+                setUser(null);
+            }
+            setAuthInitialized(true);
+        });
+
+        return () => unsubscribe();
+    }, []);
 
     useEffect(() => {
         try {
@@ -632,6 +665,19 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
             handleSendMessage();
         }
     };
+
+    if (!authInitialized) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 via-white to-indigo-50 text-slate-900">
+                <div className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-white shadow-[0_20px_60px_rgba(66,100,255,0.16)] border border-white/80">
+                    <Loader2 className="w-5 h-5 animate-spin text-sky-600" />
+                    <span className="text-sm font-semibold">
+                        Restaurando sessão...
+                    </span>
+                </div>
+            </div>
+        );
+    }
 
     if (!user) {
         return (

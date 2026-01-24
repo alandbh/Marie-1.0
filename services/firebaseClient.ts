@@ -1,5 +1,10 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import {
+    getAuth,
+    GoogleAuthProvider,
+    setPersistence,
+    browserLocalPersistence,
+} from "firebase/auth";
 
 const readEnv = (key: string): string => {
     try {
@@ -28,6 +33,7 @@ const firebaseConfig = {
 export const hasFirebaseConfig = Object.values(firebaseConfig).every(Boolean);
 
 let app: FirebaseApp | null = null;
+let authInitialized = false;
 
 export const getFirebaseAuth = () => {
     if (!hasFirebaseConfig) return null;
@@ -36,7 +42,16 @@ export const getFirebaseAuth = () => {
         app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     }
 
-    return getAuth(app);
+    const auth = getAuth(app);
+
+    if (!authInitialized) {
+        authInitialized = true;
+        setPersistence(auth, browserLocalPersistence).catch((err) =>
+            console.error("Failed to set Firebase auth persistence", err),
+        );
+    }
+
+    return auth;
 };
 
 export const googleProvider = new GoogleAuthProvider();
