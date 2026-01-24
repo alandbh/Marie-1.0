@@ -962,7 +962,7 @@ Our lab only accepts scientists from R/GA. But if you really, really want to par
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-hidden relative">
+            <main className="flex-1 z-1 overflow-hidden relative">
                 {/* --- HOME: PROJECT SELECTION --- */}
                 {state.activeTab === "home" && (
                     <div className="relative h-full">
