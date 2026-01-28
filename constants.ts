@@ -336,7 +336,7 @@ def player_has_heuristic_object(player, h_id):
 
 def player_has_score_above(player, h_id, threshold):
     scores = get_scores_for_heuristic(player, h_id)
-    return any(s > threshold for s in scores)
+    return bool(scores) and all(s > threshold for s in scores)
 
 def is_chatbot_heuristic(h_id):
     return str(h_id).startswith('8.')
